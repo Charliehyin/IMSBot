@@ -4,15 +4,6 @@ USE discordapp;
 
 DROP TABLE IF EXISTS track_key_words;
 DROP TABLE IF EXISTS tracks;
-DROP TABLE IF EXISTS users;
-
-CREATE TABLE users
-(
-    id int not null AUTO_INCREMENT,
-    discordname varchar(64) not null,
-
-    PRIMARY KEY (id)
-);
 
 CREATE TABLE tracks
 (
@@ -20,10 +11,9 @@ CREATE TABLE tracks
     setterid int not null,
     targetid int not null,
     notification_to varchar(256) not null,   -- where the discord bot should notify
-    notification_style varchar(64) not null, -- how the user wants the search (ml, keyword, or boths)
-    PRIMARY KEY (id),
-    FOREIGN KEY (setterid) REFERENCES users(id),
-    FOREIGN KEY (targetid) REFERENCES users(id)
+    notification_stule varchar(64) not null, -- either DM or Channel
+    search_mechanism varchar(64) not null, -- how the user wants the search (ml, keyword, or boths)
+    PRIMARY KEY (id)
 );
 
 CREATE TABLE track_key_words

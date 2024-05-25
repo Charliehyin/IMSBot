@@ -1,8 +1,17 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } = require('discord.js');
+const mysql = require('mysql2/promise');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages] });
+
+// Database connection
+const db = mysql.createPool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+});
 
 // When the client is ready, run this code
 client.once('ready', () => {
@@ -73,43 +82,60 @@ client.on('interactionCreate', async interaction => {
         const notificationStyle = interaction.options.getString('notification_style');
         const notificationTo = interaction.options.getString('notification_channel');
         const searchMechanism = interaction.options.getString('search_mechanism');
-        const keywords = interaction.options.getString('keywords');
+        let keywords = interaction.options.getString('keywords');
 
-        // Send these values to RDS for storage. 
+        // parse keywords from comma separated string to array
+        keywords = keywords.split(',').map(keyword => keyword.trim());
 
+        // Store the setup information in the database
+        try {
+            // Insert into tracks
+            const setterId = interaction.user.id;
+            const [trackResult] = await db.query(`
+                INSERT INTO tracks (setterid, targetid, notification_to, notification_style, search_mechanism)
+                VALUES (?, ?, ?, ?, ?)
+            `, [setterId, userId, notificationTo, notificationStyle, searchMechanism]);
+            
+            const trackId = trackResult.insertId;
 
-        // Store the setup information (in-memory storage for simplicity)
-        // You can use a database for persistent storage
-        interaction.client.setupData = {
-            userId,
-            notificationStyle,
-            notificationTo,
-            searchMechanism,
-            keywords
-        };
+            // Insert into track_key_words
+            for (const keyword of keywords) {
+                await db.query('INSERT INTO track_key_words (trackid, keyword) VALUES (?, ?)', [trackId, keyword]);
+            }
 
-        await interaction.reply(`Setup completed for user ID: ${userId} with notification style: ${notificationStyle}`);
+            await interaction.reply(`Setup completed for user ID: ${userId} with notification style: ${notificationStyle}`);
+        } catch (error) {
+            console.error(error);
+            await interaction.reply('There was an error setting up the notifications.');
+        }
     }
 });
 
 // Commands for testing notifications
 client.on('messageCreate', async message => {
-    if (message.content === '$dm') {
-        const setupData = client.setupData;
-        if (setupData && setupData.notificationStyle === 'DM') {
-            const user = await client.users.fetch(setupData.userId);
-            user.send('This is a test DM notification!');
-        } else {
-            message.reply('DM notification is not set up.');
+    // Ignore messages from bots
+    if (message.author.bot) return;
+
+    // Check if the message came from a targetid
+    try {
+        const [rows] = await db.query('SELECT * FROM tracks WHERE targetid = ?', [message.author.id]);
+        if (rows.length > 0) {
+            for (const row of rows) {
+                // Notify the user if the notification style is DM
+                if (row.notification_style === 'DM') {
+                    const user = await client.users.fetch(row.notification_to);
+                    user.send('This is a test DM notification!');
+                } 
+                // Notify the user if the notification style is a channel
+                else if (row.notification_style === 'Channel') {
+                    const channel = await client.channels.fetch(row.notification_to);
+                    channel.send('This is a test Channel notification!');
+                }
+            }
         }
-    } else if (message.content === '$channel') {
-        const setupData = client.setupData;
-        if (setupData && setupData.notificationStyle === 'Channel') {
-            const channel = await client.channels.fetch(setupData.notificationTo);
-            channel.send('This is a test Channel notification!');
-        } else {
-            message.reply('Channel notification is not set up.');
-        }
+    } catch (error) {
+        console.error(error);
+        message.reply('The bot is currently not functioning properly. Please try again later.');
     }
 });
 

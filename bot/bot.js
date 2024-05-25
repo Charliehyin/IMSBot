@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const mysql = require('mysql2/promise');
 
 // Create a new client instance
@@ -53,6 +53,20 @@ async function registerSlashCommands() {
             .addStringOption(option =>
                 option.setName('keywords')
                     .setDescription('Keywords for the search')
+                    .setRequired(true)), 
+        new SlashCommandBuilder()
+            .setName('view_tracks')
+            .setDescription('View all the tracks for a specific user')
+            .addStringOption(option =>
+                option.setName('user_id')
+                    .setDescription('User ID to view tracks')
+                    .setRequired(true)),
+        new SlashCommandBuilder()
+            .setName('delete_track')
+            .setDescription('Delete a track for a specific user')
+            .addStringOption(option =>
+                option.setName('id')
+                    .setDescription('ID of the track to delete')
                     .setRequired(true))
     ].map(command => command.toJSON());
 
@@ -107,6 +121,54 @@ client.on('interactionCreate', async interaction => {
         } catch (error) {
             console.error(error);
             await interaction.reply('There was an error setting up the notifications.');
+        }
+    }
+    if (commandName === 'view_tracks') {
+        const userId = interaction.options.getString('user_id');
+        // Create an embed for the response
+
+        try {
+            const [rows] = await db.query('SELECT * FROM tracks WHERE targetid = ?', [userId]);
+            if (rows.length > 0) {
+                const embed = new EmbedBuilder()
+                    .setTitle('Track Information')
+                    .setDescription(`Tracks for User ID: ${userId}`)
+                    .setColor(0x00AE86);
+                for (const row of rows) {
+                    let trackInfo = `Setter ID: ${row.setterid}, Notification To: ${row.notification_to}, Notification Style: ${row.notification_style}, Search Mechanism: ${row.search_mechanism}\n`;
+                    // add keywords to the response
+                    if (row.search_mechanism === 'keyword' || row.search_mechanism === 'both') {
+                        const [keywordRows] = await db.query('SELECT * FROM track_key_words WHERE trackid = ?', [row.id]);
+                        trackInfo += 'Keywords: ';
+                        for (const keywordRow of keywordRows) {
+                            trackInfo += `${keywordRow.keyword}, `;
+                        }
+                        trackInfo = trackInfo.slice(0, -2); // Remove the last comma and space
+                        trackInfo += '\n';
+                    }
+                    embed.addFields({ name: `Track ID: ${row.id}`, value: trackInfo, inline: false });
+                }
+                await interaction.reply({ embeds: [embed] });
+            } else {
+                await interaction.reply('No tracks found for the user ID.');
+            }
+        } catch (error) {
+            console.error(error);
+            await interaction.reply('There was an error viewing the tracks.');
+        }
+    }
+    if (commandName === 'delete_track') {
+        const trackId = interaction.options.getString('id');
+
+        try {
+            // Delete from track_key_words
+            await db.query('DELETE FROM track_key_words WHERE trackid = ?', [trackId]);
+            // Delete from tracks
+            await db.query('DELETE FROM tracks WHERE id = ?', [trackId]);
+            await interaction.reply('Track deleted successfully.');
+        } catch (error) {
+            console.error(error);
+            await interaction.reply('There was an error deleting the track.');
         }
     }
 });

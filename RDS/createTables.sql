@@ -11,7 +11,7 @@ CREATE TABLE tracks
     setterid int not null,
     targetid int not null,
     notification_to varchar(256) not null,   -- where the discord bot should notify
-    notification_stule varchar(64) not null, -- either DM or Channel
+    notification_style varchar(64) not null, -- either DM or Channel
     search_mechanism varchar(64) not null, -- how the user wants the search (ml, keyword, or boths)
     PRIMARY KEY (id)
 );

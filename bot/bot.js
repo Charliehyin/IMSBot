@@ -4,6 +4,7 @@ const mysql = require('mysql2/promise');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages] });
+const lambda_url = process.env.LAMBDA_URL;
 
 // Database connection
 const db = mysql.createPool({
@@ -177,21 +178,55 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async message => {
     // Ignore messages from bots
     if (message.author.bot) return;
-
+    // console.log(message.content);
     // Check if the message came from a targetid
     try {
         const [rows] = await db.query('SELECT * FROM tracks WHERE targetid = ?', [message.author.id]);
         if (rows.length > 0) {
             for (const row of rows) {
+                // Check if the message contains the keyword
+                let notify = false;
+                let notifyTracks = [];
+                if (row.search_mechanism == 'keyword' || row.search_mechanism == 'both') {
+                    const [keywords] = await db.query('SELECT * FROM track_key_words WHERE trackid = ?', [row.id]);
+                    let containsKeyword = false;
+                    for (const keyword of keywords) {
+                        if (message.content.toLowerCase().includes(keyword.keyword.toLowerCase())) {
+                            containsKeyword = true;
+                            notify = true;
+                            notifyTracks.push(row.id);
+                        }
+                    }
+                }
+                if (row.search_mechanism == 'ml' || row.search_mechanism == 'both') {
+                    const response = await fetch(lambda_url, {
+                        method: 'POST',
+                        body: JSON.stringify({ text: message.content }),
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const data = await response.json();
+                    // console.log(data);
+                    if (data.label == 'HATE') {
+                        notify = true;
+                        notifyTracks.push(row.id);
+                    }
+                    else if (data.score < .8) {
+                        notify = true;
+                        notifyTracks.push(row.id);
+                    }
+                }
+                if (!notify) {
+                    continue;
+                }
                 // Notify the user if the notification style is DM
                 if (row.notification_style === 'DM') {
                     const user = await client.users.fetch(row.notification_to);
-                    user.send('This is a test DM notification!');
+                    user.send(`The message: \n${message.content} \nHas triggered the following tracks: ${notifyTracks.join(', ')}`);
                 } 
                 // Notify the user if the notification style is a channel
                 else if (row.notification_style === 'Channel') {
                     const channel = await client.channels.fetch(row.notification_to);
-                    channel.send('This is a test Channel notification!');
+                    channel.send(`The message: \n${message.content} \nHas triggered the following tracks: ${notifyTracks.join(', ')}`);
                 }
             }
         }

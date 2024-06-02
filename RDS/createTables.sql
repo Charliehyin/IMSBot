@@ -8,8 +8,8 @@ DROP TABLE IF EXISTS tracks;
 CREATE TABLE tracks
 (
     id int not null AUTO_INCREMENT,
-    setterid int not null,
-    targetid int not null,
+    setterid varchar(256) not null,
+    targetid varchar(256) not null,
     notification_to varchar(256) not null,   -- where the discord bot should notify
     notification_style varchar(64) not null, -- either DM or Channel
     search_mechanism varchar(64) not null, -- how the user wants the search (ml, keyword, or boths)

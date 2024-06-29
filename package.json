@@ -1,7 +1,7 @@
 {
   "name": "ims_bot",
   "version": "1.0.0",
-  "main": "app.js",
+  "main": "src/bot/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

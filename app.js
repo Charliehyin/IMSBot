@@ -1,4 +1,5 @@
 require('dotenv').config();
+const express = require('express');
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const mysql = require('mysql2/promise');
 const { process_moderationapi_message } = require('./src/bot/moderationApi');
@@ -89,3 +90,15 @@ client.on('messageCreate', async message => {
 
 // Login to Discord with your app's token
 client.login(process.env.DISCORD_TOKEN);
+
+// Health check server
+const app = express();
+
+app.get('/health', (req, res) => {
+    res.send('OK');
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Health check server running on port ${PORT}`);
+});

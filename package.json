@@ -1,13 +1,13 @@
 {
-  "name": "cs310finalproject",
+  "name": "ims_bot",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Charlie Yin",
+  "license": "MIT",
   "description": "",
   "dependencies": {
     "@discordjs/rest": "^2.3.0",
@@ -15,7 +15,6 @@
     "discord-api-types": "^0.37.85",
     "discord.js": "^14.15.2",
     "dotenv": "^16.4.5",
-    "fetch": "^1.1.0",
     "mysql2": "^3.9.7",
     "node-fetch": "^3.3.2"
   }

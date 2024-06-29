@@ -4,6 +4,7 @@ const mysql = require('mysql2/promise');
 const { process_moderationapi_message } = require('./src/bot/moderationApi');
 const { setup_interaction, view_tracks_interaction, delete_track_interaction } = require('./src/bot/commands/oldCommands');
 const { setup_command, view_tracks_command, delete_track_command } = require('./src/bot/commands/oldCommands');
+const { botStatus } = require('./src/bot/botStatus');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages] });
@@ -19,6 +20,7 @@ const db = mysql.createPool({
 // When the client is ready, run this code
 client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
+    botStatus.isRunning = true; // Set bot status to running
     registerSlashCommands();
 });
 
@@ -77,14 +79,22 @@ client.on('messageCreate', async message => {
         if (message.channel.id === '1256290890432122921') {
             await db.query('INSERT INTO porn_messages (senderid, message, time_stamp) VALUES (?, ?, ?)', [message.author.id, message.content, new Date(message.createdTimestamp).toLocaleString() + ' CDT']);
         }
-
+        botStatus.rdsWorking = true;
+    } catch (error) {
+        console.error('Error adding message to RDS:', error);
+        botStatus.rdsWorking = false;
+    }
+    try {
         await process_moderationapi_message(message, "https://api.openai.com/v1/moderations", channel, client);
+        botStatus.apiWorking = true;
     } catch (error) {
         console.error('Error processing message:', error);
+        botStatus.apiWorking = false;
     }
 });
 
 // Login to Discord with your app's token
 client.login(process.env.DISCORD_TOKEN).catch(error => {
     console.error('Error logging in to Discord:', error);
+    botStatus.isRunning = false; // Set bot status to not running if login fails
 });

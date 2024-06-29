@@ -1,9 +1,9 @@
 {
   "name": "ims_bot",
   "version": "1.0.0",
-  "main": "src/bot/app.js",
+  "main": "app.js",
   "scripts": {
-    "start": "node src/bot/app.js",
+    "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

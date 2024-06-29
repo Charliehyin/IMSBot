@@ -25,9 +25,9 @@ client.once('ready', () => {
 // Slash command registration
 async function registerSlashCommands() {
     const commands = [
-        setup_command, 
-        view_tracks_command,
-        delete_track_command
+        // setup_command, 
+        // view_tracks_command,
+        // delete_track_command
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);

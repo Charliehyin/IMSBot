@@ -1,9 +1,9 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const mysql = require('mysql2/promise');
-const { process_moderationapi_message } = require('./moderationApi');
-const { setup_interaction, view_tracks_interaction, delete_track_interaction } = require('./commands/oldCommands');
-const { setup_command, view_tracks_command, delete_track_command } = require('./commands/oldCommands');
+const { process_moderationapi_message } = require('./src/bot/moderationApi');
+const { setup_interaction, view_tracks_interaction, delete_track_interaction } = require('./src/bot/commands/oldCommands');
+const { setup_command, view_tracks_command, delete_track_command } = require('./src/bot/commands/oldCommands');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages] });

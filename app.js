@@ -1,5 +1,4 @@
 require('dotenv').config();
-const express = require('express');
 const { Client, GatewayIntentBits, REST, Routes } = require('discord.js');
 const mysql = require('mysql2/promise');
 const { process_moderationapi_message } = require('./src/bot/moderationApi');
@@ -88,16 +87,4 @@ client.on('messageCreate', async message => {
 // Login to Discord with your app's token
 client.login(process.env.DISCORD_TOKEN).catch(error => {
     console.error('Error logging in to Discord:', error);
-});
-
-// Health check server
-const app = express();
-
-app.get('/health', (req, res) => {
-    res.send('OK');
-});
-
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-    console.log(`Health check server running on port ${PORT}`);
 });

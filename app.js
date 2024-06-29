@@ -69,6 +69,11 @@ client.on('messageCreate', async message => {
     // Ignore messages from bots
     if (message.author.bot) return;
 
+    if (message.content === '!status') {
+        channel.send(`Bot status: ${JSON.stringify(botStatus)}`);
+        return;
+    }
+
     try {
         // Add messages in #general to normal_messages
         if (message.channel.id === '846532502125936651') {

@@ -5,7 +5,7 @@ const { botStatus } = require('./src/bot/botStatus');
 
 const { process_moderationapi_message } = require('./src/bot/moderationApi');
 const { verify_command, verify_interaction } = require('./src/bot/commands/verify');
-//const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_guild_info');
+const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_guild_info');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages] });
@@ -28,8 +28,8 @@ client.once('ready', () => {
 // Slash command registration
 async function registerSlashCommands() {
     const commands = [
-        verify_command
-        //sync_roles_command
+        verify_command,
+        sync_roles_command
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -56,9 +56,9 @@ client.on('interactionCreate', async interaction => {
     if (commandName === 'verify') {
         await verify_interaction(interaction, db);
     } 
-    //else if (commandName === 'sync-roles') {
-    //    await sync_roles_interaction(interaction, db);
-    //}
+    else if (commandName === 'sync-roles') {
+        await sync_roles_interaction(interaction, db);
+    }
 });
 
 // When a message is created

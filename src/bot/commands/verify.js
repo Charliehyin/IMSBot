@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { get_uuid_from_ign } = require('../utils/get_uuid_from_ign');
 const { SlashCommandBuilder } = require('discord.js');
-const { verified_role, ims_guild_id, imc_guild_id, ima_guild_id } = require('../constants');
+const { verified_role } = require('../constants');
 
 const verifyMember = async (discord_username, ign, discord_id, db) => {
     try {
@@ -97,7 +97,7 @@ const verify_interaction = async (interaction, db) => {
             // Add verified role to user
             const guild = interaction.guild;
             const role = guild.roles.cache.get(verified_role);
-            const member = guild.members.cache.get(discord_id);
+            const member = interaction.member;
             member.roles.add(role);
             console.log(`    Added ${role.name} role to ${member.user.username}`);
 

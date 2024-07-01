@@ -7,6 +7,7 @@ const imc_guild_role = '846558715469103116';
 const ima_guild_role = '1026533891797942303';
 const king_role = '1027633650256326689';
 const god_role = '1027631752396681277';
+const divine_role = '1257208387914039388';
 
 
-module.exports = { verified_role, ims_guild_id, imc_guild_id, ima_guild_id, ims_guild_role, imc_guild_role, ima_guild_role, king_role, god_role}
+module.exports = { verified_role, ims_guild_id, imc_guild_id, ima_guild_id, ims_guild_role, imc_guild_role, ima_guild_role, king_role, god_role, divine_role }

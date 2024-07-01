@@ -6,6 +6,7 @@ const { botStatus } = require('./src/bot/botStatus');
 const { process_moderationapi_message } = require('./src/bot/moderationApi');
 const { verify_command, verify_interaction } = require('./src/bot/commands/verify');
 const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_roles');
+const { automod_channel, general_channel } = require('./src/bot/constants');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages] });
@@ -63,7 +64,7 @@ client.on('interactionCreate', async interaction => {
 
 // When a message is created
 client.on('messageCreate', async message => {
-    const channel = await client.channels.fetch('1256290890432122921');
+    const channel = await client.channels.fetch(automod_channel);
 
     // Ignore messages from bots
     if (message.author.bot) return;
@@ -76,14 +77,10 @@ client.on('messageCreate', async message => {
     // Message logging in RDS
     try {
         // Add messages in #general to normal_messages
-        if (message.channel.id === '846532502125936651') {
+        if (message.channel.id === general_channel) {
             await db.query('INSERT INTO normal_messages (senderid, message, time_stamp) VALUES (?, ?, ?)', [message.author.id, message.content, new Date(message.createdTimestamp).toLocaleString() + ' CDT']);
         }
 
-        // Add messages in #bot-testing-ground to porn_messages
-        if (message.channel.id === '1256290890432122921') {
-            await db.query('INSERT INTO porn_messages (senderid, message, time_stamp) VALUES (?, ?, ?)', [message.author.id, message.content, new Date(message.createdTimestamp).toLocaleString() + ' CDT']);
-        }
         botStatus.rdsWorking = true;
     } catch (error) {
         console.error('Error adding message to RDS:', error);

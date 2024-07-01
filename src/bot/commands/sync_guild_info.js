@@ -82,6 +82,7 @@ const sync_roles_interaction = async (interaction, db) => {
         console.log('    Guild roles synced')
     } catch (error) {
         console.error('Error syncing guild info:', error);
+        await interaction.reply('Error syncing guild info');
     }
 
     console.log('    Done syncing roles');

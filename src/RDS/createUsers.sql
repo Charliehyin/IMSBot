@@ -1,13 +1,10 @@
 USE imsbot;
 
 -- Create users
-DROP USER IF EXISTS 'imsbotdb-read-only';
-DROP USER IF EXISTS 'imsbotdb-read-write';
-
-CREATE USER 'imsbotdb-read-only' IDENTIFIED BY 'imsbot-read';
-CREATE USER 'imsbotdb-read-write' IDENTIFIED BY 'imsbot-read-write';
-
-GRANT SELECT, SHOW VIEW ON imsbot.* 
-      TO 'imsbotdb-read-only';
-GRANT SELECT, SHOW VIEW, INSERT, UPDATE, DELETE, DROP, CREATE, ALTER ON imsbot.* 
-      TO 'imsbotdb-read-write';
+CREATE TABLE members
+(
+    discord_id varchar(32) not null,
+    discord_username varchar(32) not null,
+    ign varchar(32) not null,
+    uuid varchar(32) not null
+);

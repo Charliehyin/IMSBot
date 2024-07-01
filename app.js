@@ -1,10 +1,11 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, REST, Routes } = require('discord.js');
 const mysql = require('mysql2/promise');
-const { process_moderationapi_message } = require('./src/bot/moderationApi');
-const { setup_interaction, view_tracks_interaction, delete_track_interaction } = require('./src/bot/commands/oldCommands');
-const { setup_command, view_tracks_command, delete_track_command } = require('./src/bot/commands/oldCommands');
 const { botStatus } = require('./src/bot/botStatus');
+
+const { process_moderationapi_message } = require('./src/bot/moderationApi');
+const { verify_command, verify_interaction } = require('./src/bot/commands/verify');
+//const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_guild_info');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages] });
@@ -27,9 +28,8 @@ client.once('ready', () => {
 // Slash command registration
 async function registerSlashCommands() {
     const commands = [
-        // setup_command, 
-        // view_tracks_command,
-        // delete_track_command
+        verify_command
+        //sync_roles_command
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -53,16 +53,15 @@ client.on('interactionCreate', async interaction => {
 
     const { commandName } = interaction;
 
-    if (commandName === 'setup') {
-        await setup_interaction(interaction, db);
-    } else if (commandName === 'view_tracks') {
-        await view_tracks_interaction(interaction, db);
-    } else if (commandName === 'delete_track') {
-        await delete_track_interaction(interaction, db);
-    }
+    if (commandName === 'verify') {
+        await verify_interaction(interaction, db);
+    } 
+    //else if (commandName === 'sync-roles') {
+    //    await sync_roles_interaction(interaction, db);
+    //}
 });
 
-// Commands for testing notifications
+// When a message is created
 client.on('messageCreate', async message => {
     const channel = await client.channels.fetch('1256290890432122921');
 
@@ -74,6 +73,7 @@ client.on('messageCreate', async message => {
         return;
     }
 
+    // Message logging in RDS
     try {
         // Add messages in #general to normal_messages
         if (message.channel.id === '846532502125936651') {
@@ -89,6 +89,8 @@ client.on('messageCreate', async message => {
         console.error('Error adding message to RDS:', error);
         botStatus.rdsWorking = false;
     }
+
+    // Automod messages using OpenAI Moderation API
     try {
         await process_moderationapi_message(message, "https://api.openai.com/v1/moderations", channel, client);
         botStatus.apiWorking = true;

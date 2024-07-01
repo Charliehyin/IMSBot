@@ -5,6 +5,7 @@ USE imsbot;
 DROP TABLE IF EXISTS tracks;
 DROP TABLE IF EXISTS porn_messages;
 DROP TABLE IF EXISTS normal_messages;
+DROP TABLE IF EXISTS members;
 
 CREATE TABLE tracks
 (
@@ -13,6 +14,14 @@ CREATE TABLE tracks
     notification_to varchar(32) not null,   -- where the discord bot should notify
     notification_style varchar(32) not null, -- either DM or Channel
     PRIMARY KEY (id)
+);
+
+CREATE TABLE members
+(
+    discord_id varchar(32) not null,
+    discord_username varchar(32) not null,
+    ign varchar(32) not null,
+    uuid varchar(32) not null
 );
 
 CREATE TABLE porn_messages

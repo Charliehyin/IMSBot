@@ -5,7 +5,7 @@ const { botStatus } = require('./src/bot/botStatus');
 
 const { process_moderationapi_message } = require('./src/bot/moderationApi');
 const { verify_command, verify_interaction } = require('./src/bot/commands/verify');
-const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_guild_info');
+const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_roles');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages] });

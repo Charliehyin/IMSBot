@@ -14,7 +14,7 @@ const get_uuid_from_ign = async (ign) => {
 
         if (resp.ok) {
             const data = await resp.json();
-            return data.id;
+            return data.id.replace(/-/g, '');
         }
 
         // Try again with alternate API
@@ -29,7 +29,7 @@ const get_uuid_from_ign = async (ign) => {
 
         if (resp2.ok) {
             const data = await resp2.json();
-            return data.data.player.id;
+            return data.data.player.id.replace(/-/g, '');
         }
 
         throw new Error('Error fetching player uuid');

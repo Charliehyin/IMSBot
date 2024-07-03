@@ -2,19 +2,11 @@ CREATE DATABASE IF NOT EXISTS imsbot;
 
 USE imsbot;
 
-DROP TABLE IF EXISTS tracks;
 DROP TABLE IF EXISTS porn_messages;
 DROP TABLE IF EXISTS normal_messages;
 DROP TABLE IF EXISTS members;
-
-CREATE TABLE tracks
-(
-    id int not null AUTO_INCREMENT,
-    targetid varchar(32) not null,
-    notification_to varchar(32) not null,   -- where the discord bot should notify
-    notification_style varchar(32) not null, -- either DM or Channel
-    PRIMARY KEY (id)
-);
+DROP TABLE IF EXISTS blacklist;
+DROP TABLE IF EXISTS punishments;
 
 CREATE TABLE members
 (
@@ -43,6 +35,25 @@ CREATE TABLE normal_messages
     PRIMARY KEY (id)
 );
 
+CREATE TABLE blacklist
+(
+    discord_id varchar(32) not null,
+    ign varchar(32) not null,
+    uuid varchar(32) not null,
+    reason varchar(1024) not null,
+    cheater boolean not null,
+    time_stamp varchar(32) not null
+);
+
+CREATE TABLE punishments
+(
+    id int not null AUTO_INCREMENT,
+    discord_id varchar(32) not null,
+    punishment varchar(128) not null,
+    reason varchar(1024) not null,
+    time_stamp varchar(32) not null,
+    PRIMARY KEY (id)
+);
 
 -- Create users
 DROP USER IF EXISTS 'imsbotdb-read-only';

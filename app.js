@@ -7,6 +7,7 @@ const { process_moderationapi_message } = require('./src/bot/moderationApi');
 const { verify_command, verify_interaction } = require('./src/bot/commands/verify');
 const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_roles');
 const { automod_channel, general_channel } = require('./src/bot/constants');
+const { blacklist_command, blacklist_interaction } = require('./src/bot/commands/blacklist');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages] });
@@ -30,7 +31,8 @@ client.once('ready', () => {
 async function registerSlashCommands() {
     const commands = [
         verify_command,
-        sync_roles_command
+        sync_roles_command,
+        blacklist_command
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -59,6 +61,9 @@ client.on('interactionCreate', async interaction => {
     } 
     else if (commandName === 'sync-roles') {
         await sync_roles_interaction(interaction, db);
+    }
+    else if (commandName === 'blacklist') {
+        await blacklist_interaction(interaction, db);
     }
 });
 

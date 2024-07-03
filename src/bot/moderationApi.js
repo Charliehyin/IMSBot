@@ -38,7 +38,7 @@ const process_moderationapi_message = async (message, model_url, channel, client
                 .setColor(embedColor);
                 embed.addFields(
                     { name: 'Author', value: `<@${message.author.id}>`, inline: true },
-                    { name: 'Time', value: `<t:${timestamp}:F>`, inline: true },
+                    { name: 'Time', value: `<t:${timestamp}:f>`, inline: true },
                     { name: 'Message', value: `${message.content}`, inline: false },
                     { name: 'Link', value: message.url, inline: false }
                 );

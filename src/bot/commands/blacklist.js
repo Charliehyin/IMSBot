@@ -133,7 +133,7 @@ const blacklist_interaction = async (interaction, db) => {
         }
     } catch (error) {
         console.error('Error managing blacklist:', error);
-        await interaction.reply('An error occurred while managing the blacklist.');
+        await interaction.reply(`There was an error while trying to manage the blacklist: ${error.message}`);
     }
 }
 

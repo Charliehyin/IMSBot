@@ -119,6 +119,7 @@ const verify_interaction = async (interaction, db) => {
     }
     catch (error) {
         console.error('Error verifying member:', error);
+        await interaction.reply(`There was an error while trying to verify the user: ${error.message}`);
     }
 }
 

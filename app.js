@@ -8,6 +8,7 @@ const { verify_command, verify_interaction } = require('./src/bot/commands/verif
 const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_roles');
 const { automod_channel, general_channel } = require('./src/bot/constants');
 const { blacklist_command, blacklist_interaction } = require('./src/bot/commands/blacklist');
+const { get_uuid_command, get_uuid_interaction } = require('./src/bot/commands/get_uuid');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages] });
@@ -32,7 +33,8 @@ async function registerSlashCommands() {
     const commands = [
         verify_command,
         sync_roles_command,
-        blacklist_command
+        blacklist_command,
+        get_uuid_command
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -64,6 +66,9 @@ client.on('interactionCreate', async interaction => {
     }
     else if (commandName === 'blacklist') {
         await blacklist_interaction(interaction, db);
+    }
+    else if (commandName === 'get_uuid') {
+        await get_uuid_interaction(interaction, db);
     }
 });
 

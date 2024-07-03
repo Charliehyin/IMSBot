@@ -1,4 +1,6 @@
 require('dotenv').config();
+const { EmbedBuilder } = require('discord.js');
+const { embedColor } = require('./constants');
 
 const process_moderationapi_message = async (message, model_url, channel, client) => {
     try {
@@ -18,18 +20,30 @@ const process_moderationapi_message = async (message, model_url, channel, client
         let { results } = await data.json();
         const flagged = results[0].flagged;
         const categories = results[0].categories;
-        console.log(message.content)
-        console.log(results[0].category_scores)
+        console.log(`${flagged}: ${message.content}`)
         if (flagged) {
             const fields = Object.keys(categories).filter(key => categories[key]);
 
-            console.log(fields)
+            console.log(`    ${fields}`)
             const timestamp = Math.floor(message.createdTimestamp/1000);
-            let replyContent = `**${fields.join(', ')}**\n<@${message.author.id}> <t:${timestamp}:F> \n${message.content} \n${message.url}`;
+
+            let replyContent = `**${fields.join(', ')}**\n\`<@${message.author.id}>\` <t:${timestamp}:F>\n${message.content} \n${message.url}`;
             if (replyContent.length > 2000) {
-                replyContent = `Flagged but message too long`;
+                replyContent = `Flagged but message too long: ${message.url}`;
             }
-            channel.send(replyContent);
+
+            const embed = new EmbedBuilder()
+                .setTitle(`New Flagged Message`)
+                .setDescription(`**${fields.join(', ')}**`)
+                .setColor(embedColor);
+                embed.addFields(
+                    { name: 'Author', value: `<@${message.author.id}>`, inline: true },
+                    { name: 'Time', value: `<t:${timestamp}:F>`, inline: true },
+                    { name: 'Message', value: `${message.content}`, inline: false },
+                    { name: 'Link', value: message.url, inline: false }
+                );
+
+            channel.send({ embeds: [embed] });
         }
     } catch(error) {
         console.error(error);

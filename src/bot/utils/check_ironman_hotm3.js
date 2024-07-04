@@ -34,7 +34,7 @@ const check_ironman_hotm3 = async (uuid) => {
     }
 
     catch (error) {
-        console.error('    Error fetching guild data:', error);
+        console.error('    Error fetching hotm data:', error);
     }
 }
 

@@ -84,6 +84,13 @@ const punishments_interaction = async (interaction, db) => {
                 console.log(`Failed to add message link for punishment for ${user}`);
                 return;
             }
+            console.log(`    Added message link for punishment for ${user}`)
+
+            // Start a thread on the message
+            const thread = await message.startThread({
+                name: 'Proof',
+                autoArchiveDuration: 1440
+            });
         }
         else if (subcommand === 'view') {
             console.log('Viewing punishments')

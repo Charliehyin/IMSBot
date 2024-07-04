@@ -2,7 +2,7 @@ require('dotenv').config();
 const { embedColor } = require('../constants');
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { get_uuid_from_ign } = require('../utils/get_uuid_from_ign');
-const itemsPerPage = 2;
+const itemsPerPage = 20;
 
 // Create the main command
 const blacklist_command = new SlashCommandBuilder()
@@ -14,8 +14,8 @@ const blacklist_command = new SlashCommandBuilder()
             .setName('remove')
             .setDescription('Remove a user from the blacklist')
             .addStringOption(option =>
-                option.setName('uuid')
-                    .setDescription('uuid of the user to remove')
+                option.setName('ign_uuid')
+                    .setDescription('ign or uuid of the user to remove')
                     .setRequired(true)))
     .addSubcommand(subcommand =>
         subcommand
@@ -80,7 +80,19 @@ const blacklist_interaction = async (interaction, db) => {
         else if (subcommand === 'remove') {
             console.log('Removing user from blacklist')
 
-            const uuid = interaction.options.getString('uuid');
+            const ign_uuid = interaction.options.getString('ign_uuid').replace(/-/g, '');
+            let uuid = ign_uuid;
+
+            if (ign_uuid.length <= 16) {
+                console.log(`    Ign provided, getting uuid from ign`)
+                uuid = await get_uuid_from_ign(ign_uuid);
+            }
+
+            if (uuid === null) {
+                console.log(`    Invalid ign or uuid provided`)
+                await interaction.reply(`Invalid ign or uuid provided.`);
+                return;
+            }
 
             // Check if the user exists in the database
             let sql = `SELECT * FROM blacklist WHERE uuid = ?`;
@@ -96,12 +108,12 @@ const blacklist_interaction = async (interaction, db) => {
             await db.query(sql, [uuid]);
             console.log(`    User removed from blacklist`)
 
-            await interaction.reply(`User with UUID ${uuid} has been removed from the blacklist.`);
+            await interaction.reply(`User ${ign_uuid} has been removed from the blacklist.`);
         }
         else if (subcommand === 'search') {
             console.log('Searching blacklist')
 
-            let ign_uuid = interaction.options.getString('ign_uuid');
+            let ign_uuid = interaction.options.getString('ign_uuid').replace(/-/g, '');
 
             // Check if the user exists in the database
             let sql = `SELECT * FROM blacklist WHERE LOWER(ign) LIKE ?`;
@@ -120,22 +132,66 @@ const blacklist_interaction = async (interaction, db) => {
                 return;
             }
 
-            // Display the users found in the blacklist with an embed
-            const embed = new EmbedBuilder()
-                .setTitle('Blacklisted Users')
-                .setDescription(`Users found in blacklist matching "${ign_uuid}"`)
-                .setColor(embedColor);
+            const pages = [];
+        
+            for (let i = 0; i < rows.length; i += itemsPerPage) {
+                const pageRows = rows.slice(i, i + itemsPerPage);
+                const embed = new EmbedBuilder()
+                    .setTitle('Blacklisted Users')
+                    .setColor(embedColor)
+                    .setFooter({ text: `Page ${pages.length + 1}/${Math.ceil(rows.length / itemsPerPage)}` });
+        
+                let description = `All users found in the blacklist matching ${ign_uuid}:\n\n`;
+        
+                pageRows.forEach(row => {
+                    description += `${row.cheater ? '<:cheater:966626510452719696>' : ''} [${row.ign}](https://laby.net/@${row.uuid}) - ${row.reason}\n`;
+                });
 
-            // Add each user to the embed
-            rows.forEach(row => {
-                embed.addFields(
-                    { name: 'IGN', value: row.ign, inline: true },
-                    { name: 'Reason', value: row.reason, inline: true },
-                    { name: 'Cheater', value: row.cheater ? 'Yes' : 'No', inline: true },
+                embed.setDescription(description);
+        
+
+                pages.push(embed);
+            }
+        
+            let currentPage = 0;
+        
+            const row = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('previous')
+                        .setLabel('Previous')
+                        .setStyle(ButtonStyle.Primary),
+                    new ButtonBuilder()
+                        .setCustomId('next')
+                        .setLabel('Next')
+                        .setStyle(ButtonStyle.Primary)
                 );
+        
+            const response = await interaction.reply({
+                embeds: [pages[currentPage]],
+                components: [row],
+                fetchReply: true
             });
-
-            await interaction.reply({ embeds: [embed] });
+        
+            const collector = response.createMessageComponentCollector({ time: 60000 });
+        
+            collector.on('collect', async i => {
+                if (i.customId === 'previous') {
+                    currentPage = currentPage > 0 ? --currentPage : pages.length - 1;
+                } else if (i.customId === 'next') {
+                    currentPage = currentPage + 1 < pages.length ? ++currentPage : 0;
+                }
+        
+                await i.update({
+                    embeds: [pages[currentPage]],
+                    components: [row]
+                });
+            });
+        
+            collector.on('end', () => {
+                row.components.forEach(button => button.setDisabled(true));
+                interaction.editReply({ components: [row] });
+            });
         }
         else if (subcommand === 'view') {
             console.log('Viewing blacklist')
@@ -160,27 +216,13 @@ const blacklist_interaction = async (interaction, db) => {
                     .setColor(embedColor)
                     .setFooter({ text: `Page ${pages.length + 1}/${Math.ceil(rows.length / itemsPerPage)}` });
         
-                let igns = '';
-                let reasons = '';
-                let cheaters = '';
+                let description = 'All users found in the blacklist:\n\n';
         
                 pageRows.forEach(row => {
-
-                    igns += `${row.ign}\n`;
-                    if (row.reason.length > 50) {
-                        reasons += `${row.reason.substring(0, 50)}...\n`;
-                    }
-                    else {
-                        reasons += `${row.reason}\n`;
-                    }
-                    cheaters += row.cheater ? 'Yes\n' : 'No\n';
+                    description += `${row.cheater ? '<:cheater:966626510452719696>' : ''} [${row.ign}](https://laby.net/@${row.uuid}) - ${row.reason}\n`;
                 });
         
-                embed.addFields(
-                    { name: "ign", value: igns, inline: true },
-                    { name: "reason", value: reasons, inline: true },
-                    { name: "cheater", value: cheaters, inline: true }
-                );
+                embed.setDescription(description);
         
                 pages.push(embed);
             }

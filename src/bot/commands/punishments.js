@@ -116,7 +116,7 @@ const punishments_interaction = async (interaction, db) => {
                 pageRows.forEach(row => {
                     punishment_reason = row.punishment + ' - ' + row.reason;
                     if (punishment_reason.length > 55) {
-                        punishmentList += `[${punishment_reason.substring(0, 55)}](${row.punishment_link})...\n`;
+                        punishmentList += `[${punishment_reason.substring(0, 55)} ](${row.punishment_link})...\n`;
                     }
                     else {
                         punishmentList += `[${punishment_reason}](${row.punishment_link})\n`;

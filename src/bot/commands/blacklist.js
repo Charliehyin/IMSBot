@@ -1,7 +1,8 @@
 require('dotenv').config();
 const { embedColor } = require('../constants');
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { get_uuid_from_ign } = require('../utils/get_uuid_from_ign');
+const itemsPerPage = 2;
 
 // Create the main command
 const blacklist_command = new SlashCommandBuilder()
@@ -39,7 +40,12 @@ const blacklist_command = new SlashCommandBuilder()
             .addStringOption(option =>
                 option.setName('ign_uuid')
                     .setDescription('ign or uuid of the user to search for')
-                    .setRequired(true)));
+                    .setRequired(true)))
+    .addSubcommand(subcommand =>
+        subcommand
+            .setName('view')
+            .setDescription('View all blacklisted users'));
+
 
 
 const blacklist_interaction = async (interaction, db) => {
@@ -130,6 +136,94 @@ const blacklist_interaction = async (interaction, db) => {
             });
 
             await interaction.reply({ embeds: [embed] });
+        }
+        else if (subcommand === 'view') {
+            console.log('Viewing blacklist')
+
+            // Get all blacklisted users
+            let sql = `SELECT * FROM blacklist`;
+            let [rows] = await db.query(sql);
+
+            if (rows.length === 0) {
+                console.log(`    No users found in blacklist.`)
+                await interaction.reply(`No users found in blacklist.`);
+                return;
+            }
+
+            const pages = [];
+        
+            for (let i = 0; i < rows.length; i += itemsPerPage) {
+                const pageRows = rows.slice(i, i + itemsPerPage);
+                const embed = new EmbedBuilder()
+                    .setTitle('Blacklisted Users')
+                    .setDescription(`All users found in the blacklist`)
+                    .setColor(embedColor)
+                    .setFooter({ text: `Page ${pages.length + 1}/${Math.ceil(rows.length / itemsPerPage)}` });
+        
+                let igns = '';
+                let reasons = '';
+                let cheaters = '';
+        
+                pageRows.forEach(row => {
+
+                    igns += `${row.ign}\n`;
+                    if (row.reason.length > 50) {
+                        reasons += `${row.reason.substring(0, 50)}...\n`;
+                    }
+                    else {
+                        reasons += `${row.reason}\n`;
+                    }
+                    cheaters += row.cheater ? 'Yes\n' : 'No\n';
+                });
+        
+                embed.addFields(
+                    { name: "ign", value: igns, inline: true },
+                    { name: "reason", value: reasons, inline: true },
+                    { name: "cheater", value: cheaters, inline: true }
+                );
+        
+                pages.push(embed);
+            }
+        
+            let currentPage = 0;
+        
+            const row = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('previous')
+                        .setLabel('Previous')
+                        .setStyle(ButtonStyle.Primary),
+                    new ButtonBuilder()
+                        .setCustomId('next')
+                        .setLabel('Next')
+                        .setStyle(ButtonStyle.Primary)
+                );
+        
+            const response = await interaction.reply({
+                embeds: [pages[currentPage]],
+                components: [row],
+                fetchReply: true
+            });
+        
+            const collector = response.createMessageComponentCollector({ time: 60000 });
+        
+            collector.on('collect', async i => {
+                if (i.customId === 'previous') {
+                    currentPage = currentPage > 0 ? --currentPage : pages.length - 1;
+                } else if (i.customId === 'next') {
+                    currentPage = currentPage + 1 < pages.length ? ++currentPage : 0;
+                }
+        
+                await i.update({
+                    embeds: [pages[currentPage]],
+                    components: [row]
+                });
+            });
+        
+            collector.on('end', () => {
+                row.components.forEach(button => button.setDisabled(true));
+                interaction.editReply({ components: [row] });
+            });
         }
     } catch (error) {
         console.error('Error managing blacklist:', error);

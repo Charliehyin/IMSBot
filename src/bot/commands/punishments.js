@@ -57,11 +57,13 @@ const punishments_interaction = async (interaction, db) => {
             sql = `INSERT INTO punishments (discord_id, punishment, reason, time_stamp) VALUES (?, ?, ?, ?)`;
             let [rows] = await db.query(sql, [user.id, punishment, reason, Math.floor(interaction.createdTimestamp/1000)]);
 
+            let lastInsertId = rows.insertId;
+
             if (rows.length === 0) {
                 await interaction.reply(`Failed to add punishment for ${user}`);
                 return;
             }
-            
+
             let embed = new EmbedBuilder()
                 .setTitle(`Punishment Logged for ${user.user.username}`)
                 .setColor('#FF0000')
@@ -71,6 +73,17 @@ const punishments_interaction = async (interaction, db) => {
                 );
 
             interaction.reply({embeds: [embed]});
+
+            // Get message link of the embed reply, and add it to db
+            const message = await interaction.fetchReply();
+            const messageLink = `https://discord.com/channels/${interaction.guildId}/${interaction.channelId}/${message.id}`;
+            sql = `UPDATE punishments SET punishment_link = ? WHERE id = ?`;
+            [rows] = await db.query(sql, [messageLink, lastInsertId]);
+
+            if (rows.length === 0) {
+                console.log(`Failed to add message link for punishment for ${user}`);
+                return;
+            }
         }
         else if (subcommand === 'view') {
             console.log('Viewing punishments')
@@ -97,24 +110,25 @@ const punishments_interaction = async (interaction, db) => {
                     .setFooter({ text: `Page ${pages.length + 1}/${Math.ceil(rows.length / itemsPerPage)}` });
         
                 let punishmentList = '';
-                let reasonList = '';
                 let timeList = '';
+                let idList = '';
         
                 pageRows.forEach(row => {
-                    punishmentList += `${row.punishment}\n`;
-                    if (row.reason.length > 40) {
-                        reasonList += `${row.reason.substring(0, 40)}...\n`;
+                    punishment_reason = row.punishment + ' - ' + row.reason;
+                    if (punishment_reason.length > 55) {
+                        punishmentList += `[${punishment_reason.substring(0, 55)}](${row.punishment_link})...\n`;
                     }
                     else {
-                        reasonList += `${row.reason}\n`;
+                        punishmentList += `[${punishment_reason}](${row.punishment_link})\n`;
                     }
                     timeList += `<t:${row.time_stamp}:R>\n`;
+                    idList += `${row.id}\n`;
                 });
         
                 embed.addFields(
                     { name: "Punishment", value: punishmentList, inline: true },
-                    { name: "Reason", value: reasonList, inline: true },
-                    { name: "Time", value: timeList, inline: true }
+                    { name: "Time", value: timeList, inline: true },
+                    { name: "ID", value: idList, inline: true }
                 );
         
                 pages.push(embed);
@@ -160,40 +174,6 @@ const punishments_interaction = async (interaction, db) => {
                 interaction.editReply({ components: [row] });
             });
             
-            /*
-            // Get punishments from db
-            sql = `SELECT * FROM punishments WHERE discord_id = ? ORDER BY time_stamp DESC`;
-
-            let [rows] = await db.query(sql, [user.id]);
-            if (rows.length === 0) {
-                await interaction.reply(`No punishments found for ${user}`);
-                return;
-            }
-
-            let embed = new EmbedBuilder()
-                .setTitle(`Viewing Punishments for ${username}                                         `)
-                .setColor('#FF0000');
-
-            let idList = '';
-            let punishmentList = '';
-            let reasonList = '';
-            let timeList = '';
-
-            rows.forEach(row => {
-                idList += `${row.id.toString()}\n`;
-                punishmentList += `${row.punishment}\n`;
-                reasonList += `${row.reason}\n`;
-                timeList += `<t:${row.time_stamp}:R>\n`;
-            });
-
-            embed.addFields(
-                { name: "Punishment", value: punishmentList, inline: true },
-                { name: "Reason", value: reasonList, inline: true },
-                { name: "Time", value: timeList, inline: true }
-            );
-
-            await interaction.reply({embeds: [embed]});
-            */
         }
         else if (subcommand === 'remove') {
             console.log('Removing a punishment')

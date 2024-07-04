@@ -1,3 +1,3 @@
 USE imsbot;
 
-select * from blacklist;
+select * from punishments;

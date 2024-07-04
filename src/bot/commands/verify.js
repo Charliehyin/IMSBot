@@ -114,7 +114,7 @@ const verify_interaction = async (interaction, db) => {
         }
         else {
             console.log(`    Failed to verify ${discord_username} to ${ign} for reason: \n${verified}`)
-            await interaction.reply(`Failed to verify \`${discord_username}\` to \`${ign}\` for reason: \n${verified.strip()}`);
+            await interaction.reply(`Failed to verify \`${discord_username}\` to \`${ign}\` for reason: \n${verified.trim()}`);
         }
     }
     catch (error) {

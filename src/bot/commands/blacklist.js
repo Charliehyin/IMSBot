@@ -71,8 +71,8 @@ const blacklist_interaction = async (interaction, db) => {
             }
 
             // Add the user to the blacklist
-            sql = `INSERT INTO blacklist (discord_id, uuid, reason, cheater, time_stamp, ign) VALUES (?, ?, ?, ?, ?, ?)`;
-            await db.query(sql, [interaction.user.id, uuid, reason, cheater, Math.floor(interaction.createdTimestamp/1000), ign ]);
+            sql = `INSERT INTO blacklist (uuid, reason, cheater, time_stamp, ign) VALUES (?, ?, ?, ?, ?)`;
+            await db.query(sql, [uuid, reason, cheater, Math.floor(interaction.createdTimestamp/1000), ign ]);
             console.log(`    User added to blacklist`)
 
             await interaction.reply(`User ${ign} has been blacklisted for reason: ${reason}. Cheater status: ${cheater}`);

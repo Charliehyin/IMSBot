@@ -1,14 +1,13 @@
 USE imsbot;
 
-DROP TABLE punishments;
+DROP TABLE blacklist;
 
-CREATE TABLE punishments
+CREATE TABLE blacklist
 (
-    id int not null AUTO_INCREMENT,
     discord_id varchar(32) not null,
-    punishment varchar(128) not null,
+    ign varchar(32) not null,
+    uuid varchar(32) not null,
     reason varchar(1024) not null,
-    time_stamp varchar(32) not null,
-    punishment_link varchar(128) not null,
-    PRIMARY KEY (id)
+    cheater boolean not null,
+    time_stamp varchar(32) not null
 );

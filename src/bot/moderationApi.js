@@ -27,23 +27,24 @@ const process_moderationapi_message = async (message, model_url, channel, client
             console.log(`    ${fields}`)
             const timestamp = Math.floor(message.createdTimestamp/1000);
 
-            let replyContent = `**${fields.join(', ')}**\n\`<@${message.author.id}>\` <t:${timestamp}:F>\n${message.content} \n${message.url}`;
+            let replyContent = `<@${message.author.id}>: ${message.content}. [Link](${message.url})`;
             if (replyContent.length > 2000) {
                 replyContent = `Flagged but message too long: ${message.url}`;
             }
 
             const embed = new EmbedBuilder()
-                .setTitle(`New Flagged Message`)
-                .setDescription(`**${fields.join(', ')}**`)
+                .setDescription(replyContent)
                 .setColor(embedColor);
-                embed.addFields(
-                    { name: 'Author', value: `<@${message.author.id}>`, inline: true },
-                    { name: 'Time', value: `<t:${timestamp}:f>`, inline: true },
-                    { name: 'Message', value: `${message.content}`, inline: false },
-                    { name: 'Link', value: message.url, inline: false }
-                );
+            //     embed.addFields(
+            //         { name: 'Author', value: `<@${message.author.id}>`, inline: true },
+            //         { name: 'Time', value: `<t:${timestamp}:f>`, inline: true },
+            //         { name: 'Message', value: `${message.content}`, inline: false },
+            //         { name: 'Link', value: message.url, inline: false }
+            //     );
 
             channel.send({ embeds: [embed] });
+
+            // channel.send(replyContent);
         }
     } catch(error) {
         console.error(error);

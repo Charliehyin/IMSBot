@@ -78,10 +78,10 @@ const blacklist_interaction = async (interaction, db) => {
 			console.log(`    UUID: ${uuid}`);
 
 			// Check if the user exists in the database
-			let sql = `SELECT * FROM blacklist WHERE uuid = ?`;
-			let [rows] = await db.query(sql, [uuid]);
+			let sql = "SELECT * FROM blacklist WHERE uuid = ?";
+			const [rows] = await db.query(sql, [uuid]);
 			if (rows.length > 0) {
-				console.log(`    User is already blacklisted.`);
+				console.log("User is already blacklisted.");
 				await interaction.reply(
 					`User with UUID ${uuid} is already blacklisted.`,
 				);
@@ -89,7 +89,8 @@ const blacklist_interaction = async (interaction, db) => {
 			}
 
 			// Add the user to the blacklist
-			sql = `INSERT INTO blacklist (uuid, reason, cheater, time_stamp, ign) VALUES (?, ?, ?, ?, ?)`;
+			sql =
+				"INSERT INTO blacklist (uuid, reason, cheater, time_stamp, ign) VALUES (?, ?, ?, ?, ?)";
 			await db.query(sql, [
 				uuid,
 				reason,
@@ -97,7 +98,7 @@ const blacklist_interaction = async (interaction, db) => {
 				Math.floor(interaction.createdTimestamp / 1000),
 				ign,
 			]);
-			console.log(`    User added to blacklist`);
+			console.log("User added to blacklist");
 
 			await interaction.reply(
 				`User ${ign} has been blacklisted for reason: ${reason}. Cheater status: ${cheater}`,
@@ -111,29 +112,29 @@ const blacklist_interaction = async (interaction, db) => {
 			let uuid = ign_uuid;
 
 			if (ign_uuid.length <= 16) {
-				console.log(`    Ign provided, getting uuid from ign`);
+				console.log("Ign provided, getting uuid from ign");
 				uuid = await get_uuid_from_ign(ign_uuid);
 			}
 
 			if (uuid === null) {
-				console.log(`    Invalid ign or uuid provided`);
-				await interaction.reply(`Invalid ign or uuid provided.`);
+				console.log("Invalid ign or uuid provided");
+				await interaction.reply("Invalid ign or uuid provided.");
 				return;
 			}
 
 			// Check if the user exists in the database
-			let sql = `SELECT * FROM blacklist WHERE uuid = ?`;
-			let [rows] = await db.query(sql, [uuid]);
+			let sql = "SELECT * FROM blacklist WHERE uuid = ?";
+			const [rows] = await db.query(sql, [uuid]);
 			if (rows.length === 0) {
-				console.log(`    User is not blacklisted.`);
-				await interaction.reply(`User is not blacklisted.`);
+				console.log("User is not blacklisted.");
+				await interaction.reply("User is not blacklisted.");
 				return;
 			}
 
 			// Remove the user from the blacklist
-			sql = `DELETE FROM blacklist WHERE uuid = ?`;
+			sql = "DELETE FROM blacklist WHERE uuid = ?";
 			await db.query(sql, [uuid]);
-			console.log(`    User removed from blacklist`);
+			console.log("User removed from blacklist");
 
 			await interaction.reply(
 				`User ${ign_uuid} has been removed from the blacklist.`,
@@ -146,19 +147,19 @@ const blacklist_interaction = async (interaction, db) => {
 				.replace(/-/g, "");
 
 			// Check if the user exists in the database
-			let sql = `SELECT * FROM blacklist WHERE LOWER(ign) LIKE ?`;
-			let searchString = `%${ign_uuid.toLowerCase()}%`;
+			let sql = "SELECT * FROM blacklist WHERE LOWER(ign) LIKE ?";
+			const searchString = `%${ign_uuid.toLowerCase()}%`;
 			let [rows] = await db.query(sql, [searchString]);
 
-			sql = `SELECT * FROM blacklist WHERE uuid = ?`;
+			sql = "SELECT * FROM blacklist WHERE uuid = ?";
 			ign_uuid = ign_uuid.replace(/-/g, "");
-			let [more_rows] = await db.query(sql, [ign_uuid]);
+			const [more_rows] = await db.query(sql, [ign_uuid]);
 
 			rows = rows.concat(more_rows);
 
 			if (rows.length === 0) {
-				console.log(`    No users found in blacklist.`);
-				await interaction.reply(`No users found in blacklist.`);
+				console.log("No users found in blacklist.");
+				await interaction.reply("No users found in blacklist.");
 				return;
 			}
 
@@ -175,9 +176,9 @@ const blacklist_interaction = async (interaction, db) => {
 
 				let description = `All users found in the blacklist matching ${ign_uuid}:\n\n`;
 
-				pageRows.forEach((row) => {
+				for (const row of pageRows) {
 					description += `${row.cheater ? "<:cheater:966626510452719696>" : ""} [${row.ign}](https://laby.net/@${row.uuid}) - ${row.reason}\n`;
-				});
+				}
 
 				embed.setDescription(description);
 
@@ -221,19 +222,21 @@ const blacklist_interaction = async (interaction, db) => {
 			});
 
 			collector.on("end", () => {
-				row.components.forEach((button) => button.setDisabled(true));
+				for (const button of row.components) {
+					button.setDisabled(true);
+				}
 				interaction.editReply({ components: [row] });
 			});
 		} else if (subcommand === "view") {
 			console.log("Viewing blacklist");
 
 			// Get all blacklisted users
-			let sql = `SELECT * FROM blacklist`;
-			let [rows] = await db.query(sql);
+			const sql = "SELECT * FROM blacklist";
+			const [rows] = await db.query(sql);
 
 			if (rows.length === 0) {
-				console.log(`    No users found in blacklist.`);
-				await interaction.reply(`No users found in blacklist.`);
+				console.log("No users found in blacklist.");
+				await interaction.reply("No users found in blacklist.");
 				return;
 			}
 
@@ -243,7 +246,7 @@ const blacklist_interaction = async (interaction, db) => {
 				const pageRows = rows.slice(i, i + itemsPerPage);
 				const embed = new EmbedBuilder()
 					.setTitle("Blacklisted Users")
-					.setDescription(`All users found in the blacklist`)
+					.setDescription("All users found in the blacklist")
 					.setColor(embedColor)
 					.setFooter({
 						text: `Page ${pages.length + 1}/${Math.ceil(rows.length / itemsPerPage)}`,
@@ -251,9 +254,9 @@ const blacklist_interaction = async (interaction, db) => {
 
 				let description = "All users found in the blacklist:\n\n";
 
-				pageRows.forEach((row) => {
+				for (const row of pageRows) {
 					description += `${row.cheater ? "<:cheater:966626510452719696>" : ""} [${row.ign}](https://laby.net/@${row.uuid}) - ${row.reason}\n`;
-				});
+				}
 
 				embed.setDescription(description);
 
@@ -297,7 +300,9 @@ const blacklist_interaction = async (interaction, db) => {
 			});
 
 			collector.on("end", () => {
-				row.components.forEach((button) => button.setDisabled(true));
+				for (const button of row.components) {
+					button.setDisabled(true);
+				}
 				interaction.editReply({ components: [row] });
 			});
 		}

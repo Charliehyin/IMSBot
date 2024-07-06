@@ -16,7 +16,7 @@ const check_ironman_hotm3 = async (uuid) => {
 
 		if (resp.ok) {
 			const data = await resp.json();
-			for (let profile of data.profiles) {
+			for (const profile of data.profiles) {
 				if (!profile.members[uuid]) {
 					continue;
 				}

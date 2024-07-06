@@ -17,7 +17,7 @@ const get_ironman_skyblock_xp = async (uuid) => {
 
 		if (resp.ok) {
 			const data = await resp.json();
-			for (let profile of data.profiles) {
+			for (const profile of data.profiles) {
 				if (!profile.members[uuid]) {
 					continue;
 				}
@@ -37,4 +37,4 @@ const get_ironman_skyblock_xp = async (uuid) => {
 	}
 };
 
-module.exports = { get_ironman_skyblock_xp };
+export default { get_ironman_skyblock_xp };

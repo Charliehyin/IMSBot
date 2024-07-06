@@ -46,30 +46,30 @@ const sync_guild_info = async (interaction, uuid) => {
 	const discord_id = interaction.member.id;
 	// Check if user is in IMS guild
 	if (guild_id === ims_guild_id) {
-		console.log(`    ${uuid} is in IMS guild`);
+		console.log(`${uuid} is in IMS guild`);
 
 		interaction.member.roles.add(ims_guild_role);
-		console.log("    IMS role added");
+		console.log("IMS role added");
 		roles.push(ims_guild_role);
 
 		roles = add_rank_role(interaction, rank, roles);
 	}
 	// Check if user is in IMC guild
 	if (guild_id === imc_guild_id) {
-		console.log(`    ${uuid} is in IMC guild`);
+		console.log(`${uuid} is in IMC guild`);
 
 		interaction.member.roles.add(imc_guild_role);
-		console.log("    IMC role added");
+		console.log("IMC role added");
 		roles.push(imc_guild_role);
 
 		roles = add_rank_role(interaction, rank, roles);
 	}
 	// Check if user is in IMA guild
 	if (guild_id === ima_guild_id) {
-		console.log(`    ${uuid} is in IMA guild`);
+		console.log(`${uuid} is in IMA guild`);
 
 		interaction.member.roles.add(ima_guild_role);
-		console.log("    IMA role added");
+		console.log("IMA role added");
 		roles.push(ima_guild_role);
 
 		roles = add_rank_role(interaction, rank, roles);
@@ -88,31 +88,31 @@ const sync_roles_interaction = async (interaction, db) => {
 		const discord_id = interaction.member.id;
 
 		// Get uuid from database
-		let sql = `SELECT uuid FROM members WHERE discord_id = ?`;
-		let [rows] = await db.query(sql, [discord_id]);
+		const sql = "SELECT uuid FROM members WHERE discord_id = ?";
+		const [rows] = await db.query(sql, [discord_id]);
 		if (rows.length === 0) {
 			interaction.reply("You are not verified");
 			return;
 		}
 		const uuid = rows[0].uuid;
 
-		console.log(`    uuid: ${uuid}, discord_id: ${discord_id}`);
+		console.log(`uuid: ${uuid}, discord_id: ${discord_id}`);
 
-		let roles = await sync_guild_info(interaction, uuid);
-		console.log("    Guild roles synced");
+		const roles = await sync_guild_info(interaction, uuid);
+		console.log("Guild roles synced");
 
 		// Check if user is ironman in HOTM3
 		const ironman = await check_ironman_hotm3(uuid);
 
 		if (ironman) {
 			interaction.member.roles.add(lfp_plus_role);
-			console.log("    lfp plus role added");
+			console.log("lfp plus role added");
 			roles.push(lfp_plus_role);
 		}
 
-		console.log("    Done syncing roles");
+		console.log("Done syncing roles");
 		await interaction.reply(
-			"Roles synced: " + roles.map((role) => "<@&" + role + ">").join(", "),
+			`Roles synced: ${roles.map((role) => `<@&${role}>`).join(", ")}`,
 		);
 	} catch (error) {
 		console.error("Error syncing guild info:", error);

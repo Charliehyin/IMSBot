@@ -1,7 +1,7 @@
 require("dotenv").config();
 const { Client, GatewayIntentBits, REST, Routes } = require("discord.js");
 const mysql = require("mysql2/promise");
-const { botStatus } = require("./src/bot/botStatus");
+const { botStatus } = require("./src/bot/botStatus").default;
 
 const { process_moderationapi_message } = require("./src/bot/moderationApi");
 const {
@@ -122,7 +122,7 @@ client.on("messageCreate", async (message) => {
 				[
 					message.author.id,
 					message.content,
-					new Date(message.createdTimestamp).toLocaleString() + " CDT",
+					`${new Date(message.createdTimestamp).toLocaleString()} CDT`,
 				],
 			);
 		}

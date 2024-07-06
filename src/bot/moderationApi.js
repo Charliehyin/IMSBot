@@ -22,7 +22,7 @@ const process_moderationapi_message = async (
 			}),
 		});
 
-		let { results } = await data.json();
+		const { results } = await data.json();
 		const flagged = results[0].flagged;
 		const categories = results[0].categories;
 		console.log(`${flagged}: ${message.content}`);

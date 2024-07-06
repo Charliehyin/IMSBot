@@ -12,19 +12,19 @@ const verifyMember = async (discord_username, ign, discord_id, db) => {
 
 		// Check if the UUID is valid
 		if (uuid === undefined) {
-			return "    Invalid IGN";
+			return "Invalid IGN";
 		}
-		console.log(`    ${ign}'s Minecraft UUID: ${uuid}`);
+		console.log(`${ign}'s Minecraft UUID: ${uuid}`);
 
 		// Check if member exists in db
-		let sql = `SELECT ign FROM members WHERE discord_id = ? AND uuid = ?`;
-		let [rows] = await db.query(sql, [discord_id, uuid]);
+		const sql = "SELECT ign FROM members WHERE discord_id = ? AND uuid = ?";
+		const [rows] = await db.query(sql, [discord_id, uuid]);
 		if (rows.length > 0) {
-			db.query(`UPDATE members SET ign = ? WHERE discord_id = ?`, [
+			db.query("UPDATE members SET ign = ? WHERE discord_id = ?", [
 				ign,
 				discord_id,
 			]);
-			console.log("    Member already exists in database");
+			console.log("Member already exists in database");
 			return true;
 		}
 
@@ -40,7 +40,7 @@ const verifyMember = async (discord_username, ign, discord_id, db) => {
 		});
 
 		if (!resp.ok) {
-			return "    Error fetching player data from Hypixel API";
+			return "Error fetching player data from Hypixel API";
 		}
 
 		const data = await resp.json();
@@ -50,30 +50,29 @@ const verifyMember = async (discord_username, ign, discord_id, db) => {
 
 		// Check if discord username matches the linked discord account case insensitive
 		if (discord_username.toLowerCase() === linked_discord.toLowerCase()) {
-			console.log("    Updating existing member in database");
+			console.log("Updating existing member in database");
 			// Check database for whether this member exists in the database
-			let sql = `SELECT * FROM members WHERE discord_id = ?`;
-			let [rows] = await db.query(sql, [discord_id]);
+			let sql = "SELECT * FROM members WHERE discord_id = ?";
+			const [rows] = await db.query(sql, [discord_id]);
 			if (rows.length > 0) {
 				// Update the minecraft ign in the database
-				sql = `UPDATE members SET ign = ? WHERE discord_id = ?`;
+				sql = "UPDATE members SET ign = ? WHERE discord_id = ?";
 				db.query(sql, [ign, discord_id]);
 
 				// Update the minecraft uuid in the database
-				sql = `UPDATE members SET uuid = ? WHERE discord_id = ?`;
+				sql = "UPDATE members SET uuid = ? WHERE discord_id = ?";
 				db.query(sql, [uuid, discord_id]);
 
 				// TODO: Check if this member is blacklisted or cheater
 			} else {
-				console.log("    Adding new member to database");
+				console.log("Adding new member to database");
 				// Insert the member into the database
-				sql = `INSERT INTO members (discord_id, ign, uuid) VALUES (?, ?, ?)`;
+				sql = "INSERT INTO members (discord_id, ign, uuid) VALUES (?, ?, ?)";
 				db.query(sql, [discord_id, ign, uuid]);
 			}
 			return true;
-		} else {
-			return `    Linked discord on Hypixel(${linked_discord}) does not match current Discord account(${discord_username})`;
 		}
+		return `Linked discord on Hypixel(${linked_discord}) does not match current Discord account(${discord_username})`;
 	} catch (error) {
 		console.error("Error fetching player data:", error);
 	}
@@ -112,10 +111,10 @@ const verify_interaction = async (interaction, db) => {
 				0
 			) {
 				member.setNickname(ign);
-				console.log(`    Set nickname to ${ign}`);
+				console.log(`Set nickname to ${ign}`);
 			} else {
 				console.log(
-					`    Bot hoist is lower than member hoist, skipping nickname change`,
+					"Bot hoist is lower than member hoist, skipping nickname change",
 				);
 			}
 
@@ -124,7 +123,7 @@ const verify_interaction = async (interaction, db) => {
 			);
 		} else {
 			console.log(
-				`    Failed to verify ${discord_username} to ${ign} for reason: \n${verified}`,
+				`Failed to verify ${discord_username} to ${ign} for reason: \n${verified}`,
 			);
 			await interaction.reply(
 				`Failed to verify \`${discord_username}\` to \`${ign}\` for reason: \n${verified.trim()}`,

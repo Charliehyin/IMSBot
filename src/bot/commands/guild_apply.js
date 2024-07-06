@@ -7,7 +7,8 @@ const {
 	ButtonStyle,
 } = require("discord.js");
 const { get_uuid_from_ign } = require("../utils/get_uuid_from_ign");
-const { get_ironman_skyblock_xp } = require("../utils/get_ironman_skyblock_xp");
+const { get_ironman_skyblock_xp } =
+	require("../utils/get_ironman_skyblock_xp").default;
 const { embedColor, IMA_req, IMC_req, IMS_req } = require("../constants");
 
 const guild_apply_command = new SlashCommandBuilder()
@@ -35,7 +36,7 @@ const guild_apply_interaction = async (interaction, db) => {
 		const subcommand = interaction.options.getSubcommand();
 
 		// get uuid from database
-		let sql = `SELECT uuid FROM members WHERE discord_id = ?`;
+		let sql = "SELECT uuid FROM members WHERE discord_id = ?";
 		let [rows] = await db.query(sql, [interaction.member.user.id]);
 
 		if (rows.length === 0) {
@@ -50,7 +51,7 @@ const guild_apply_interaction = async (interaction, db) => {
 		const uuid = rows[0].uuid;
 
 		// Check if user is on blacklist
-		sql = `SELECT * FROM blacklist WHERE uuid = ?`;
+		sql = "SELECT * FROM blacklist WHERE uuid = ?";
 		[rows] = await db.query(sql, [uuid]);
 
 		if (rows.length > 0 && rows[0].cheater) {

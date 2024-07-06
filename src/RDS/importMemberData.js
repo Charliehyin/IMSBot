@@ -13,15 +13,15 @@ const db = mysql.createPool({
 const importMemberData = async () => {
 	for (const entry of verified_users) {
 		try {
-			let discord_id = entry.discord;
-			let uuid = entry.uuid;
-			let ign = entry.username;
+			const discord_id = entry.discord;
+			const uuid = entry.uuid;
+			const ign = entry.username;
 
 			// Check if member exists in db
 			// discord, uuid, username
-			let sql = `SELECT ign FROM members WHERE discord_id = ? AND uuid = ?`;
+			const sql = "SELECT ign FROM members WHERE discord_id = ? AND uuid = ?";
 
-			let [rows] = await db.query(sql, [discord_id, uuid]);
+			const [rows] = await db.query(sql, [discord_id, uuid]);
 			if (rows.length > 0) {
 				console.log(`    Member ${ign} already exists in database`);
 				continue;

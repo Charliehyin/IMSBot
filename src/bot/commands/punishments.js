@@ -75,7 +75,8 @@ const punishments_interaction = async (interaction, db) => {
 			console.log(`    Reason: ${reason}`);
 
 			// Add punishment to db
-			sql = `INSERT INTO punishments (discord_id, punishment, reason, time_stamp) VALUES (?, ?, ?, ?)`;
+			sql =
+				"INSERT INTO punishments (discord_id, punishment, reason, time_stamp) VALUES (?, ?, ?, ?)";
 			let [rows] = await db.query(sql, [
 				discord_id,
 				punishment,
@@ -83,15 +84,15 @@ const punishments_interaction = async (interaction, db) => {
 				Math.floor(interaction.createdTimestamp / 1000),
 			]);
 
-			let lastInsertId = rows.insertId;
+			const lastInsertId = rows.insertId;
 
 			if (rows.length === 0) {
 				await interaction.reply(`Failed to add punishment for ${user}`);
 				return;
 			}
 
-			let embed = new EmbedBuilder()
-				.setTitle(`Punishment Logged for:`)
+			const embed = new EmbedBuilder()
+				.setTitle("Punishment Logged for:")
 				.setDescription(`<@${discord_id}>`)
 				.setColor("#FF0000")
 				.addFields(
@@ -104,7 +105,7 @@ const punishments_interaction = async (interaction, db) => {
 			// Get message link of the embed reply, and add it to db
 			const message = await interaction.fetchReply();
 			const messageLink = `https://discord.com/channels/${interaction.guildId}/${interaction.channelId}/${message.id}`;
-			sql = `UPDATE punishments SET punishment_link = ? WHERE id = ?`;
+			sql = "UPDATE punishments SET punishment_link = ? WHERE id = ?";
 			[rows] = await db.query(sql, [messageLink, lastInsertId]);
 
 			if (rows.length === 0) {
@@ -113,7 +114,7 @@ const punishments_interaction = async (interaction, db) => {
 				);
 				return;
 			}
-			console.log(`    Added message link for punishment for ${discord_id}`);
+			console.log(`Added message link for punishment for ${discord_id}`);
 
 			// Start a thread on the message
 			const thread = await message.startThread({
@@ -125,9 +126,10 @@ const punishments_interaction = async (interaction, db) => {
 			const user = interaction.options.getMentionable("user");
 			const username = user.user.username;
 
-			console.log(`    User: ${user}`);
+			console.log(`User: ${user}`);
 
-			const sql = `SELECT * FROM punishments WHERE discord_id = ? ORDER BY time_stamp DESC`;
+			const sql =
+				"SELECT * FROM punishments WHERE discord_id = ? ORDER BY time_stamp DESC";
 			const [rows] = await db.query(sql, [user.id]);
 
 			if (rows.length === 0) {
@@ -150,8 +152,8 @@ const punishments_interaction = async (interaction, db) => {
 				let timeList = "";
 				let idList = "";
 
-				pageRows.forEach((row) => {
-					punishment_reason = row.punishment + " - " + row.reason;
+				for (const row of pageRows) {
+					const punishment_reason = `${row.punishment} - ${row.reason}`;
 					if (punishment_reason.length > 55) {
 						punishmentList += `[${punishment_reason.substring(0, 55)} ](${row.punishment_link})...\n`;
 					} else {
@@ -159,7 +161,7 @@ const punishments_interaction = async (interaction, db) => {
 					}
 					timeList += `<t:${row.time_stamp}:R>\n`;
 					idList += `${row.id}\n`;
-				});
+				}
 
 				embed.addFields(
 					{ name: "Punishment", value: punishmentList, inline: true },
@@ -207,7 +209,9 @@ const punishments_interaction = async (interaction, db) => {
 			});
 
 			collector.on("end", () => {
-				row.components.forEach((button) => button.setDisabled(true));
+				for (const button of row.components) {
+					button.setDisabled(true);
+				}
 				interaction.editReply({ components: [row] });
 			});
 		} else if (subcommand === "remove") {
@@ -217,8 +221,8 @@ const punishments_interaction = async (interaction, db) => {
 			console.log(`    Punishment ID: ${punishment_id}`);
 
 			// Check if punishment exists
-			sql = `SELECT * FROM punishments WHERE id = ?`;
-			let [rows] = await db.query(sql, [punishment_id]);
+			sql = "SELECT * FROM punishments WHERE id = ?";
+			const [rows] = await db.query(sql, [punishment_id]);
 			if (rows.length === 0) {
 				await interaction.reply(
 					`Punishment with ID ${punishment_id} not found`,
@@ -227,7 +231,7 @@ const punishments_interaction = async (interaction, db) => {
 			}
 
 			// Remove punishment from db
-			sql = `DELETE FROM punishments WHERE id = ?`;
+			sql = "DELETE FROM punishments WHERE id = ?";
 			await db.query(sql, [punishment_id]);
 
 			await interaction.reply(

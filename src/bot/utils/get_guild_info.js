@@ -22,15 +22,15 @@ const get_guild_info = async (uuid) => {
 
 			console.log(`    Guild ID: ${data.guild._id}`);
 
-			let rank = "Member";
+			const rank = "Member";
 			// Find the member in the guild
-			for (let member of data.guild.members) {
+			for (const member of data.guild.members) {
 				if (member.uuid === uuid) {
 					console.log(`    Guild Rank: ${member.rank}`);
 					return [data.guild._id, member.rank];
 				}
 			}
-			console.log(`    Unable to find rank`);
+			console.log("Unable to find rank");
 			return [data.guild._id, "Unknown Rank"];
 		}
 

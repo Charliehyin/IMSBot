@@ -1,6 +1,6 @@
 require("dotenv").config();
 const express = require("express");
-const botStatus = require("./src/bot/botStatus");
+const botStatus = require("./src/bot/botStatus").default;
 
 // Health check server
 const app = express();

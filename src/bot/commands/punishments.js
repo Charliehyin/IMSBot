@@ -10,6 +10,10 @@ const punishments_command = new SlashCommandBuilder()
         subcommand
             .setName('add')
             .setDescription('Add a punishment')
+            .addMentionableOption(option => 
+                option.setName('user')
+                    .setDescription('punished user')
+                    .setRequired(true))
             .addStringOption(option =>
                 option.setName('punishment')
                     .setDescription('type and length of punishment')
@@ -17,13 +21,7 @@ const punishments_command = new SlashCommandBuilder()
             .addStringOption(option =>
                 option.setName('reason')
                     .setDescription('reason for the punishment')
-                    .setRequired(true))
-            .addMentionableOption(option => 
-                        option.setName('user')
-                            .setDescription('punished user'))
-            .addStringOption(option =>
-                option.setName('discord_id')
-                    .setDescription('id of user to remove(if not mentioned)')))
+                    .setRequired(true)))
     .addSubcommand(subcommand =>
         subcommand
             .setName('view')
@@ -51,16 +49,7 @@ const punishments_interaction = async (interaction, db) => {
             const user = interaction.options.getMentionable('user');
             const punishment = interaction.options.getString('punishment');
             const reason = interaction.options.getString('reason');
-            let discord_id = interaction.options.getString('discord_id');
-
-            if (user === null && discord_id === null) {
-                await interaction.reply('You must mention a user or provide a discord id to add a punishment');
-                return;
-            }
-
-            if (discord_id === null) {
-                discord_id = user.id;
-            }
+            const discord_id = user.id;
 
             console.log(`    User: ${discord_id}`)
             console.log(`    Punishment: ${punishment}`)

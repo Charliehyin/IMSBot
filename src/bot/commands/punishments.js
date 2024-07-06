@@ -10,10 +10,6 @@ const punishments_command = new SlashCommandBuilder()
         subcommand
             .setName('add')
             .setDescription('Add a punishment')
-            .addMentionableOption(option => 
-                option.setName('user')
-                    .setDescription('punished user')
-                    .setRequired(true))
             .addStringOption(option =>
                 option.setName('punishment')
                     .setDescription('type and length of punishment')
@@ -21,7 +17,13 @@ const punishments_command = new SlashCommandBuilder()
             .addStringOption(option =>
                 option.setName('reason')
                     .setDescription('reason for the punishment')
-                    .setRequired(true)))
+                    .setRequired(true))
+            .addMentionableOption(option => 
+                        option.setName('user')
+                            .setDescription('punished user'))
+            .addStringOption(option =>
+                option.setName('discord_id')
+                    .setDescription('id of user to remove(if not mentioned)')))
     .addSubcommand(subcommand =>
         subcommand
             .setName('view')
@@ -45,17 +47,28 @@ const punishments_interaction = async (interaction, db) => {
 
         if (subcommand === 'add') {
             console.log('Adding a punishment')
+
             const user = interaction.options.getMentionable('user');
             const punishment = interaction.options.getString('punishment');
             const reason = interaction.options.getString('reason');
+            let discord_id = interaction.options.getString('discord_id');
 
-            console.log(`    User: ${user}`)
+            if (user === null && discord_id === null) {
+                await interaction.reply('You must mention a user or provide a discord id to add a punishment');
+                return;
+            }
+
+            if (discord_id === null) {
+                discord_id = user.id;
+            }
+
+            console.log(`    User: ${discord_id}`)
             console.log(`    Punishment: ${punishment}`)
             console.log(`    Reason: ${reason}`)
 
             // Add punishment to db
             sql = `INSERT INTO punishments (discord_id, punishment, reason, time_stamp) VALUES (?, ?, ?, ?)`;
-            let [rows] = await db.query(sql, [user.id, punishment, reason, Math.floor(interaction.createdTimestamp/1000)]);
+            let [rows] = await db.query(sql, [discord_id, punishment, reason, Math.floor(interaction.createdTimestamp/1000)]);
 
             let lastInsertId = rows.insertId;
 
@@ -65,7 +78,8 @@ const punishments_interaction = async (interaction, db) => {
             }
 
             let embed = new EmbedBuilder()
-                .setTitle(`Punishment Logged for ${user.user.username}`)
+                .setTitle(`Punishment Logged for:`)
+                .setDescription(`<@${discord_id}>`)
                 .setColor('#FF0000')
                 .addFields(
                     { name: "Punishment", value: punishment, inline: true },
@@ -81,10 +95,10 @@ const punishments_interaction = async (interaction, db) => {
             [rows] = await db.query(sql, [messageLink, lastInsertId]);
 
             if (rows.length === 0) {
-                console.log(`Failed to add message link for punishment for ${user}`);
+                console.log(`Failed to add message link for punishment for ${discord_id}`);
                 return;
             }
-            console.log(`    Added message link for punishment for ${user}`)
+            console.log(`    Added message link for punishment for ${discord_id}`)
 
             // Start a thread on the message
             const thread = await message.startThread({

@@ -20,7 +20,7 @@ const verifyMember = async (discord_username, ign, discord_id, db) => {
         let sql = `SELECT ign FROM members WHERE discord_id = ? AND uuid = ?`;
         let [rows] = await db.query(sql, [discord_id, uuid]);
         if (rows.length > 0) {
-            db.query(`UPDATE members SET discord_username = ?, ign = ? WHERE discord_id = ?`, [discord_username, ign, discord_id])
+            db.query(`UPDATE members SET ign = ? WHERE discord_id = ?`, [ign, discord_id])
             console.log("    Member already exists in database")
             return true;
         }
@@ -49,7 +49,7 @@ const verifyMember = async (discord_username, ign, discord_id, db) => {
         if (discord_username.toLowerCase() === linked_discord.toLowerCase()){
             console.log("    Updating existing member in database")
             // Check database for whether this member exists in the database
-            let sql = `SELECT discord_username FROM members WHERE discord_id = ?`;
+            let sql = `SELECT * FROM members WHERE discord_id = ?`;
             let [rows] = await db.query(sql, [discord_id]);
             if (rows.length > 0) {
                 // Update the minecraft ign in the database
@@ -64,8 +64,8 @@ const verifyMember = async (discord_username, ign, discord_id, db) => {
             } else {
                 console.log("    Adding new member to database")
                 // Insert the member into the database
-                sql = `INSERT INTO members (discord_id, discord_username, ign, uuid) VALUES (?, ?, ?, ?)`;
-                db.query(sql, [discord_id, discord_username, ign, uuid]);
+                sql = `INSERT INTO members (discord_id, ign, uuid) VALUES (?, ?, ?)`;
+                db.query(sql, [discord_id, ign, uuid]);
             }
             return true;
         } else {

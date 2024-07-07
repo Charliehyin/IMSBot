@@ -24,7 +24,7 @@ const get_ironman_skyblock_xp = async (uuid) => {
                 if (profile.game_mode !== 'ironman') {
                     continue;
                 }
-                highestXp = max(highestLevel, profile.members[uuid].leveling.experience); 
+                highestXp = Math.max(highestXp, profile.members[uuid].leveling.experience); 
             }
         }
 

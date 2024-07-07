@@ -10,10 +10,25 @@ const { automod_channel, general_channel } = require('./src/bot/constants');
 const { blacklist_command, blacklist_interaction } = require('./src/bot/commands/blacklist');
 const { get_uuid_command, get_uuid_interaction } = require('./src/bot/commands/get_uuid');
 const { punishments_command, punishments_interaction } = require('./src/bot/commands/punishments');
-const { guild_apply_command, guild_apply_interaction } = require('./src/bot/commands/guild_apply');
+const { 
+    guild_apply_command, 
+    guild_apply_interaction, 
+    setup_apply_command, 
+    setup_apply_interaction,
+    handle_apply_button, 
+    handle_guild_selection,
+    reestablishApplicationButtons 
+} = require('./src/bot/commands/guild_apply');
 
 // Create a new client instance
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages] });
+const client = new Client({ 
+    intents: [
+        GatewayIntentBits.Guilds, 
+        GatewayIntentBits.GuildMessages, 
+        GatewayIntentBits.MessageContent, 
+        GatewayIntentBits.DirectMessages
+    ] 
+});
 
 // Database connection
 const db = mysql.createPool({
@@ -24,10 +39,11 @@ const db = mysql.createPool({
 });
 
 // When the client is ready, run this code
-client.once('ready', () => {
+client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
     botStatus.isRunning = true; // Set bot status to running
-    registerSlashCommands();
+    await registerSlashCommands();
+    await reestablishApplicationButtons(client);
 });
 
 // Slash command registration
@@ -38,7 +54,8 @@ async function registerSlashCommands() {
         blacklist_command,
         get_uuid_command,
         punishments_command,
-        guild_apply_command
+        guild_apply_command,
+        setup_apply_command
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -58,27 +75,38 @@ async function registerSlashCommands() {
 }
 
 client.on('interactionCreate', async interaction => {
-    if (!interaction.isChatInputCommand()) return;
+    if (interaction.isChatInputCommand()) {
+        const { commandName } = interaction;
 
-    const { commandName } = interaction;
-
-    if (commandName === 'verify') {
-        await verify_interaction(interaction, db);
-    } 
-    else if (commandName === 'sync-roles') {
-        await sync_roles_interaction(interaction, db);
-    }
-    else if (commandName === 'blacklist') {
-        await blacklist_interaction(interaction, db);
-    }
-    else if (commandName === 'get_uuid') {
-        await get_uuid_interaction(interaction, db);
-    }
-    else if (commandName === 'punishments') {
-        await punishments_interaction(interaction, db);
-    }
-    else if (commandName === 'guild_apply') {
-        await guild_apply_interaction(interaction, db);
+        switch (commandName) {
+            case 'verify':
+                await verify_interaction(interaction, db);
+                break;
+            case 'sync-roles':
+                await sync_roles_interaction(interaction, db);
+                break;
+            case 'blacklist':
+                await blacklist_interaction(interaction, db);
+                break;
+            case 'get_uuid':
+                await get_uuid_interaction(interaction, db);
+                break;
+            case 'punishments':
+                await punishments_interaction(interaction, db);
+                break;
+            case 'guild_apply':
+                await guild_apply_interaction(interaction, db);
+                break;
+            case 'setup_apply':
+                await setup_apply_interaction(interaction);
+                break;
+        }
+    } else if (interaction.isButton()) {
+        if (interaction.customId === 'apply_button') {
+            await handle_apply_button(interaction, db);
+        } else if (interaction.customId.startsWith('apply_')) {
+            await handle_guild_selection(interaction, db, client);
+        }
     }
 });
 

@@ -1,8 +1,8 @@
 // botStatus.js
-let botStatus = {
-    isRunning: false,
-    apiWorking: true,
-    rdsWorking: true,
-};
+const botStatus = {
+  isRunning: false,
+  apiWorking: true,
+  rdsWorking: true,
+}
 
-module.exports = { botStatus };
+export default { botStatus }

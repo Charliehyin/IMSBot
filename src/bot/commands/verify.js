@@ -207,8 +207,11 @@ const verify_interaction = async (interaction, db, opts) => {
             else {
                 console.log(`    Bot hoist is lower than member hoist, skipping nickname change`);
             }
-
-            await interaction.reply({ content: `Successfully verified \`${discord_username}\` with IGN \`${ign}\``, ephemeral: true });
+            if (opts) {
+                await interaction.reply({ content: `Successfully verified \`${discord_username}\` with IGN \`${ign}\``, ephemeral: true });
+            } else {
+                await interaction.reply({ content: `Successfully verified \`${discord_username}\` with IGN \`${ign}\``});
+            }
         }
         else {
             console.log(`    Failed to verify ${discord_username} to ${ign} for reason: \n${verified}`)

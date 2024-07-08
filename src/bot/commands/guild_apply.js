@@ -21,7 +21,16 @@ const guild_apply_command = new SlashCommandBuilder()
 const setup_apply_command = new SlashCommandBuilder()
     .setName('setup_apply')
     .setDescription('Setup the guild application button')
-    .setDefaultMemberPermissions(8);
+    .setDefaultMemberPermissions(1099511627776)
+    .addBooleanOption(option =>
+        option.setName('ims_closed')
+        .setDescription('If Ironman Sweats is closed'))
+    .addBooleanOption(option =>
+        option.setName('imc_closed')
+        .setDescription('If Ironman Casuals is closed'))
+    .addBooleanOption(option =>
+        option.setName('ima_closed')
+        .setDescription('If Ironman Academy is closed'));
 
 async function guild_apply_interaction(interaction, db) {
     try {
@@ -84,18 +93,63 @@ async function guild_apply_interaction(interaction, db) {
 async function setup_apply_interaction(interaction) {
     const embed = new EmbedBuilder()
         .setColor(embedColor)
-        .setTitle('Guild Application')
-        .setDescription('Click the button below to apply for a guild!');
+        .setTitle('Guild Applications')
+        .setDescription(`Click the button below to apply for a guild!
 
-    const row = new ActionRowBuilder()
+            **Note:** You must verify your Minecraft account before applying for a guild.
+
+            Universal Guild Requirements:
+- Ironman
+- All APIs enabled
+- Private Island/Garden visits enabled for guild members
+- Kicked after 7+ days of inactivity
+
+            IMS Requirement: Skyblock level **${IMS_req}**
+            IMC Requirement: Skyblock level **${IMC_req}**
+            IMA Requirement: Skyblock level **${IMA_req}**
+            
+            You may view the waitlists for each guild in <#${IMS_waitlist}>, <#${IMC_waitlist}>, and <#${IMA_waitlist}>.
+            
+            **Please do not apply for multiple guilds at once.**`);
+
+    let IMS_button = new ButtonBuilder()
+        .setCustomId('apply_ironman_sweats')
+        .setLabel('Ironman Sweats')
+        .setStyle(ButtonStyle.Primary);
+
+    let IMC_button = new ButtonBuilder()
+        .setCustomId('apply_ironman_casuals')
+        .setLabel('Ironman Casuals')
+        .setStyle(ButtonStyle.Primary);
+    
+    let IMA_button = new ButtonBuilder()
+        .setCustomId('apply_ironman_academy')
+        .setLabel('Ironman Academy')
+        .setStyle(ButtonStyle.Primary);
+
+    if (interaction.options.getBoolean('ims_closed')) {
+        IMS_button = IMS_button.setDisabled(true);
+        IMS_button = IMS_button.setLabel('Ironman Sweats (Closed)');
+    }
+
+    if (interaction.options.getBoolean('imc_closed')) {
+        IMC_button = IMC_button.setDisabled(true);
+        IMC_button = IMC_button.setLabel('Ironman Casuals (Closed)');
+    }
+
+    if (interaction.options.getBoolean('ima_closed')) {
+        IMA_button = IMA_button.setDisabled(true);
+        IMA_button = IMA_button.setLabel('Ironman Academy (Closed)');
+    }
+    
+    const guildButtons = new ActionRowBuilder()
         .addComponents(
-            new ButtonBuilder()
-                .setCustomId('apply_button')
-                .setLabel('Apply')
-                .setStyle(ButtonStyle.Primary),
+            IMS_button,
+            IMC_button,
+            IMA_button
         );
 
-    const message = await interaction.channel.send({ embeds: [embed], components: [row] });
+    const message = await interaction.channel.send({ embeds: [embed], components: [guildButtons] });
     
     // Save the new message ID and channel ID
     console.log(message.id);
@@ -104,8 +158,7 @@ async function setup_apply_interaction(interaction) {
     await interaction.reply({ content: 'Application button has been set up!', ephemeral: true });
 }
 
-async function handle_apply_button(interaction, db) {
-    // Check eligibility (similar to guild_apply_interaction)
+async function handle_guild_selection(interaction, db, client) {
     let sql = `SELECT uuid FROM members WHERE discord_id = ?`;
     let [rows] = await db.query(sql, [interaction.user.id]);
 
@@ -124,29 +177,7 @@ async function handle_apply_button(interaction, db) {
         return;
     }
 
-    // Create buttons for each guild
-    const guildButtons = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('apply_ironman_sweats')
-                .setLabel('Ironman Sweats')
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId('apply_ironman_casuals')
-                .setLabel('Ironman Casuals')
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId('apply_ironman_academy')
-                .setLabel('Ironman Academy')
-                .setStyle(ButtonStyle.Primary)
-        );
-
-    await interaction.reply({ content: 'Choose a guild to apply for:', components: [guildButtons], ephemeral: true });
-}
-
-async function handle_guild_selection(interaction, db, client) {
     const guildName = interaction.customId.replace('apply_', '');
-    const uuid = (await db.query(`SELECT uuid FROM members WHERE discord_id = ?`, [interaction.user.id]))[0][0].uuid;
     const ign = (await db.query(`SELECT ign FROM members WHERE discord_id = ?`, [interaction.user.id]))[0][0].ign;
     const member = await interaction.guild.members.fetch(interaction.user.id);
     const skyblock_xp = await get_ironman_skyblock_xp(uuid);
@@ -279,6 +310,7 @@ const handle_guild_accept = async (interaction, db, client) => {
 
 const handle_guild_reject = async (interaction, db, client) => {
     try {
+        const ign = interaction.message.content.split(" ")[0];
         const userid = interaction.message.content.split(" ")[1].replace("(", "").replace(")", "").replace("<@", "").replace(">", "");
         const channelid = interaction.message.channel.id;
         let guildName;
@@ -290,6 +322,22 @@ const handle_guild_reject = async (interaction, db, client) => {
             guildName = 'Ironman Academy';
         } else {
             throw new Error('Invalid channel');
+        }
+
+        let channel;
+        switch(guildName) {
+            case 'Ironman Sweats':
+                channel = await client.channels.fetch(IMS_application_channel);
+                channel.send(`${ign} (<@${userid}>) has been rejected by ${interaction.user}!`);
+                break;
+            case 'Ironman Casuals':
+                channel = await client.channels.fetch(IMC_application_channel);
+                channel.send(`${ign} (<@${userid}>) has been rejected by ${interaction.user}!`);
+                break;
+            case 'Ironman Academy':
+                channel = await client.channels.fetch(IMA_application_channel);
+                channel.send(`${ign} (<@${userid}>) has been rejected by ${interaction.user}!`);
+                break;
         }
 
         const member = await interaction.guild.members.fetch(userid);
@@ -346,10 +394,9 @@ const handle_guild_ask_to_leave = async (interaction, db, client) => {
 
 module.exports = {
     guild_apply_command,
-    guild_apply_interaction,
     setup_apply_command,
+    guild_apply_interaction,
     setup_apply_interaction,
-    handle_apply_button,
     handle_guild_selection,
     handle_guild_accept,
     handle_guild_reject,

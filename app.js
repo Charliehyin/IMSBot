@@ -15,7 +15,6 @@ const {
     guild_apply_interaction, 
     setup_apply_command, 
     setup_apply_interaction,
-    handle_apply_button, 
     handle_guild_selection,
     handle_guild_accept,
     handle_guild_reject,
@@ -104,9 +103,7 @@ client.on('interactionCreate', async interaction => {
                 break;
         }
     } else if (interaction.isButton()) {
-        if (interaction.customId === 'apply_button') {
-            await handle_apply_button(interaction, db);
-        } else if (interaction.customId.startsWith('apply_')) {
+        if (interaction.customId.startsWith('apply_')) {
             await handle_guild_selection(interaction, db, client);
         } else if (interaction.customId === 'guild_accept') {
             await handle_guild_accept(interaction, db, client);

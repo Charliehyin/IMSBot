@@ -29,7 +29,7 @@ const sync_guild_info = async (interaction, uuid) => {
     let roles = [];
 
     if (guild_id === -1) {
-        return;
+        return [];
     }
 
     const discord_id = interaction.member.id;

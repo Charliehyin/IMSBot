@@ -111,25 +111,38 @@ client.on('interactionCreate', async interaction => {
                 await help_verify_interaction(interaction);
                 break;
         }
-    } else if (interaction.isButton()) {
+    } 
+    else if (interaction.isButton()) {
         if (interaction.customId.startsWith('apply_')) {
             await handle_guild_selection(interaction, db, client);
-        } else if (interaction.customId === 'guild_accept') {
-            await handle_guild_accept(interaction, db, client);
-        } else if (interaction.customId === 'guild_reject') {
-            await handle_guild_reject(interaction, db, client);
-        } else if (interaction.customId === 'guild_invited') {
-            await handle_guild_invited(interaction, db, client);
-        } else if (interaction.customId === 'guild_ask_to_leave') {
-            await handle_guild_ask_to_leave(interaction, db, client);
-        } else if (interaction.customId === 'verify_button') {
-            await verify_button_interaction(interaction, db);
-        } else if (interaction.customId === 'verify_help') {
-            await help_button_interaction(interaction);
+        } else {
+            switch (interaction.customId) {
+                case 'guild_accept':
+                    await handle_guild_accept(interaction, db, client);
+                    break;
+                case 'guild_reject':
+                    await handle_guild_reject(interaction, db, client);
+                    break;
+                case 'guild_invited':
+                    await handle_guild_invited(interaction, db, client);
+                    break;
+                case 'guild_ask_to_leave':
+                    await handle_guild_ask_to_leave(interaction, db, client);
+                    break;
+                case 'verify_button':
+                    await verify_button_interaction(interaction, db);
+                    break;
+                case 'verify_help':
+                    await help_button_interaction(interaction);
+                    break;
+            }
         }
-    } else if (interaction.isModalSubmit()) {
-        if (interaction.customId === 'verification_form') {
-            await verify_interaction(interaction, db, { 'ign': interaction.fields.getTextInputValue('ign_input') });
+    } 
+    else if (interaction.isModalSubmit()) {
+        switch(interaction.customId) {
+            case 'verification_form':
+                await verify_interaction(interaction, db, { 'ign': interaction.fields.getTextInputValue('ign_input') });
+                break;
         }
     }
 });
@@ -141,23 +154,18 @@ client.on('messageCreate', async message => {
     // Ignore messages from bots
     if (message.author.bot) return;
 
-    if (message.content === '!status') {
-        channel.send(`Bot status: ${JSON.stringify(botStatus)}`);
-        return;
-    }
-
     // Message logging in RDS
-    try {
-        // Add messages in #general to normal_messages
-        if (message.channel.id === general_channel) {
-            await db.query('INSERT INTO normal_messages (senderid, message, time_stamp) VALUES (?, ?, ?)', [message.author.id, message.content, new Date(message.createdTimestamp).toLocaleString() + ' CDT']);
-        }
+    // try {
+    //     // Add messages in #general to normal_messages
+    //     if (message.channel.id === general_channel) {
+    //         await db.query('INSERT INTO normal_messages (senderid, message, time_stamp) VALUES (?, ?, ?)', [message.author.id, message.content, new Date(message.createdTimestamp).toLocaleString() + ' CDT']);
+    //     }
 
-        botStatus.rdsWorking = true;
-    } catch (error) {
-        console.error('Error adding message to RDS:', error);
-        botStatus.rdsWorking = false;
-    }
+    //     botStatus.rdsWorking = true;
+    // } catch (error) {
+    //     console.error('Error adding message to RDS:', error);
+    //     botStatus.rdsWorking = false;
+    // }
 
     // Automod messages using OpenAI Moderation API
     try {

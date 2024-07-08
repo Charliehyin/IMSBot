@@ -7,6 +7,8 @@ const { process_moderationapi_message } = require('./src/bot/moderationApi');
 const { 
     verify_command,
     verify_interaction,
+    help_verify_command,
+    help_verify_interaction,
     setup_verify_command,
     setup_verify_interaction,
     verify_button_interaction,
@@ -61,7 +63,8 @@ async function registerSlashCommands() {
         get_uuid_command,
         punishments_command,
         setup_apply_command,
-        setup_verify_command
+        setup_verify_command,
+        help_verify_command
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -103,6 +106,9 @@ client.on('interactionCreate', async interaction => {
                 break;
             case 'setup_verify':
                 await setup_verify_interaction(interaction);
+                break;
+            case 'help_verify':
+                await help_verify_interaction(interaction);
                 break;
         }
     } else if (interaction.isButton()) {

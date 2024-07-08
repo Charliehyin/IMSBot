@@ -8,6 +8,31 @@ const setup_verify_command = new SlashCommandBuilder()
     .setDescription('Setup the verify button for the first time')
     .setDefaultMemberPermissions(8);
 
+const verify_command = new SlashCommandBuilder()
+    .setName('verify')
+    .setDescription('Verify a user with their Minecraft IGN')
+    .addStringOption(option =>
+        option.setName('ign')
+            .setDescription('Current linked Minecraft IGN on Hypixel')
+            .setRequired(true))
+
+const help_verify_command = new SlashCommandBuilder()
+    .setName('help_verify')
+    .setDescription('Send the verification help video')
+    .setDefaultMemberPermissions(1099511627776);
+
+const help_verify_interaction = async (interaction) => {
+    try {
+        await interaction.reply({
+            files: ['./assets/link_discord.mp4']
+        });
+        console.log('Sent verification help video')
+    } catch (error) {
+        console.error('Error showing verification help:', error);
+        await interaction.reply({ content: `There was an error while trying to show the verification help: ${error.message}.`});
+    }
+}
+
 const setup_verify_interaction = async (interaction) => {
     try {
         const embed = new EmbedBuilder()
@@ -169,14 +194,6 @@ const verifyMember = async (discord_username, ign, discord_id, db) => {
     }
 }
 
-const verify_command = new SlashCommandBuilder()
-.setName('verify')
-.setDescription('Verify a user with their Minecraft IGN')
-.addStringOption(option =>
-    option.setName('ign')
-        .setDescription('Current linked Minecraft IGN on Hypixel')
-        .setRequired(true))
-
 const verify_interaction = async (interaction, db, opts) => {
     const discord_username = interaction.user.username;
     let ign;
@@ -225,4 +242,14 @@ const verify_interaction = async (interaction, db, opts) => {
 }
 
 
-module.exports = { verifyMember, verify_command, verify_interaction, setup_verify_command, setup_verify_interaction, verify_button_interaction, help_button_interaction }
+module.exports = { 
+    verifyMember, 
+    verify_command, 
+    help_verify_command, 
+    help_verify_interaction, 
+    verify_interaction, 
+    setup_verify_command, 
+    setup_verify_interaction, 
+    verify_button_interaction, 
+    help_button_interaction
+}

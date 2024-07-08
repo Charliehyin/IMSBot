@@ -98,7 +98,7 @@ async function handle_guild_selection(interaction, db, client) {
     sql = `SELECT * FROM blacklist WHERE uuid = ?`;
     [rows] = await db.query(sql, [uuid]);
 
-    if (rows.length > 0 && rows[0].cheater) {
+    if (rows.length > 0) {
         await interaction.reply({ content: `You are on the blacklist and cannot apply for a guild. \nReason: ${rows[0].reason}`, ephemeral: true });
         return;
     }

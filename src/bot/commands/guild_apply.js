@@ -21,7 +21,7 @@ const guild_apply_command = new SlashCommandBuilder()
 const setup_apply_command = new SlashCommandBuilder()
     .setName('setup_apply')
     .setDescription('Setup the guild application button')
-    .setDefaultPermission(false);
+    .setDefaultMemberPermissions(8);
 
 async function guild_apply_interaction(interaction, db) {
     try {
@@ -172,126 +172,175 @@ async function handle_guild_selection(interaction, db, client) {
         return;
     }
 
-    let applyMessage;
+    let applyMessage, channel;
     switch(guildName) {
         case 'ironman_sweats':
             // Application process for Ironman Sweats
-            const channel = await client.channels.fetch(IMS_application_channel);
+            channel = await client.channels.fetch(IMS_application_channel);
             applyMessage = await channel.send(`${ign} (${member}) has applied for Ironman Sweats!`)
 
             break;
         case 'ironman_casuals':
             // Application process for Ironman Casuals
+            channel = await client.channels.fetch(IMC_application_channel);
+            applyMessage = await channel.send(`${ign} (${member}) has applied for Ironman Casuals!`)
             break;
         case 'ironman_academy':
             // Application process for Ironman Academy
+            channel = await client.channels.fetch(IMA_application_channel);
+            applyMessage = await channel.send(`${ign} (${member}) has applied for Ironman Academy!`)
+            break;    
     }
 
     const ApplicationActions = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder()
-                .setCustomId('accept')
+                .setCustomId('guild_accept')
                 .setLabel('Accept')
                 .setStyle(ButtonStyle.Success),
             new ButtonBuilder()
-                .setCustomId('reject')
+                .setCustomId('guild_reject')
                 .setLabel('Reject')
                 .setStyle(ButtonStyle.Danger)
         );
 
     await applyMessage.edit({ components: [ApplicationActions] });
 
-    const collector = applyMessage.createMessageComponentCollector();
-      
-    let waitlist_message;
-    collector.on('collect', async i => {
-        if (i.customId === 'accept') {
-            // add the user to the waitlist
-            switch(guildName) {
-                case 'ironman_sweats':
-                    const channel = await client.channels.fetch(IMS_application_channel);
-                    const waitlist_channel = await client.channels.fetch(IMS_waitlist);
-                    waitlist_message = await waitlist_channel.send(`${ign}(${i.user})`);
-                    channel.send(`${ign} (${i.user}) has been accepted by ${i.user}!`);
-                    break;
-                case 'ironman_casuals':
-                    break;
-                case 'ironman_academy':
-                    break;
-            }
-
-            const WaitlistActions = new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('invited')
-                        .setLabel('Invited')
-                        .setStyle(ButtonStyle.Success),
-                    new ButtonBuilder()
-                        .setCustomId('ask-to-leave')
-                        .setLabel('Ask To Leave Guild')
-                        .setStyle(ButtonStyle.Primary)
-                );
-
-            await waitlist_message.edit({ components: [WaitlistActions] });
-
-            collector.stop();
-
-            const waitlist_collector = waitlist_message.createMessageComponentCollector();
-            waitlist_collector.on('collect', async wi => {
-                if (wi.customId === 'invited') {
-                    // delete the message
-                    await wi.message.delete();
-                    console.log("invited");
-                } else if (wi.customId === 'ask-to-leave') {
-                    console.log("ask-to-leave");
-                    // dm the user
-                    const dm = await member.createDM();
-                    dm.send('Please leave your guild');
-                    wi.reply({ content: `${ign} has been asked to leave their guild`, ephemeral: true });
-                }
-            });
-
-            // delete the message
-            await i.message.delete();
-            console.log("accept");
-
-        } else if (i.customId === 'reject') {
-            console.log("reject");
-            await i.message.delete();
-        }
-    });
-
-
-    await interaction.reply({ content: `You have applied for ${guildName.replace('_', ' ')} (application process not yet implemented)`, ephemeral: true });
+    await interaction.reply({ content: `You have successfully applied for ${guildName.replace('_', ' ')}.`, ephemeral: true });
 }
 
-async function reestablishApplicationButtons(client) {
+const handle_guild_accept = async (interaction, db, client) => {
     try {
-        // Fetch the channel where the application message is supposed to be
-        const channel = await client.channels.fetch(APPLICATION_CHANNEL_ID);
-        if (!channel) return console.error("Couldn't find the application channel");
+        // message format: ign (<@user>) has applied for Ironman Sweats!
+        const ign = interaction.message.content.split(" ")[0];
+        const userid = interaction.message.content.split(" ")[1].replace("(", "").replace(")", "").replace("<@", "").replace(">", "");
+        const member = await interaction.guild.members.fetch(userid);
+        const channelid = interaction.message.channel.id;
+        let guildName;
+        if (channelid === IMS_application_channel) {
+            guildName = 'Ironman Sweats';
+        } else if (channelid === IMC_application_channel) {
+            guildName = 'Ironman Casuals';
+        } else if (channelid === IMA_application_channel) {
+            guildName = 'Ironman Academy';
+        } else {
+            throw new Error('Invalid channel');
+        }
 
-        // Try to fetch the existing message
-        const message = await channel.messages.fetch(APPLICATION_MESSAGE_ID);
-        
-        // If the message exists, update its components
-        const embed = new EmbedBuilder()
-            .setColor(embedColor)
-            .setTitle('Guild Application')
-            .setDescription('Click the button below to apply for a guild!');
+        let waitlist_message, channel, waitlist_channel;
+        // add the user to the waitlist
+        switch(guildName) {
+            case 'Ironman Sweats':
+                channel = await client.channels.fetch(IMS_application_channel);
+                waitlist_channel = await client.channels.fetch(IMS_waitlist);
+                waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>)`);
+                channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
+                break;
+            case 'Ironman Casuals':
+                channel = await client.channels.fetch(IMC_application_channel);
+                waitlist_channel = await client.channels.fetch(IMC_waitlist);
+                waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>)`);
+                channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
+                break;
+            case 'Ironman Academy':
+                channel = await client.channels.fetch(IMA_application_channel);
+                waitlist_channel = await client.channels.fetch(IMA_waitlist);
+                waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>)`);
+                channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
+                break;
+        }
 
-        const row = new ActionRowBuilder()
+        const WaitlistActions = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
-                    .setCustomId('apply_button')
-                    .setLabel('Apply')
-                    .setStyle(ButtonStyle.Primary),
+                    .setCustomId('guild_invited')
+                    .setLabel('Invited')
+                    .setStyle(ButtonStyle.Success),
+                new ButtonBuilder()
+                    .setCustomId('guild_ask_to_leave')
+                    .setLabel('Ask To Leave Guild')
+                    .setStyle(ButtonStyle.Primary)
             );
 
-        await message.edit({ embeds: [embed], components: [row] });
-        console.log('Successfully reestablished application buttons');
+        await waitlist_message.edit({ components: [WaitlistActions] });
+
+        // dm the user
+        const dm = await member.createDM();
+        dm.send(`You have been accepted into ${guildName}. You are now on the waitlist. <#${IMS_waitlist}>`);
+
+        // delete the message
+        await interaction.message.delete();
+        console.log("accept");
     } catch (error) {
-        console.error("Couldn't find the application message. You may need to run /setup_apply again.", error);
+        console.error('Error accepting user:', error);
+        interaction.reply({ content: `An error occurred while accepting the user: ${error.message}`, ephemeral: true });
+    }
+}
+
+const handle_guild_reject = async (interaction, db, client) => {
+    try {
+        const userid = interaction.message.content.split(" ")[1].replace("(", "").replace(")", "").replace("<@", "").replace(">", "");
+        const channelid = interaction.message.channel.id;
+        let guildName;
+        if (channelid === IMS_application_channel) {
+            guildName = 'Ironman Sweats';
+        } else if (channelid === IMC_application_channel) {
+            guildName = 'Ironman Casuals';
+        } else if (channelid === IMA_application_channel) {
+            guildName = 'Ironman Academy';
+        } else {
+            throw new Error('Invalid channel');
+        }
+
+        const member = await interaction.guild.members.fetch(userid);
+        // dm the user
+        const dm = await member.createDM();
+        dm.send(`You have been rejected from ${guildName}`);
+        await interaction.message.delete();
+        console.log("reject");
+    }
+    catch (error) {
+        console.error('Error rejecting user:', error);
+        interaction.reply({ content: `An error occurred while rejecting the user: ${error.message}`, ephemeral: true });
+    }
+}
+
+const handle_guild_invited = async (interaction, db, client) => {
+    try {
+        await interaction.message.delete();
+        console.log("invited");
+    } catch (error) {
+        console.error('Error inviting user:', error);
+        interaction.reply({ content: `An error occurred while inviting the user: ${error.message}`, ephemeral: true });
+    }
+}
+
+const handle_guild_ask_to_leave = async (interaction, db, client) => {
+    try {
+        // parse the user from the message. 
+        // message format: ign (<@user>)
+        const ign = interaction.message.content.split(" ")[0];
+        const userid = interaction.message.content.split(" ")[1].replace("(", "").replace(")", "").replace("<@", "").replace(">", "");
+        const member = await interaction.guild.members.fetch(userid);
+        const channelid = interaction.message.channel.id;
+        let guildName;
+        if (channelid === IMS_waitlist) {
+            guildName = 'Ironman Sweats';
+        } else if (channelid === IMC_waitlist) {
+            guildName = 'Ironman Casuals';
+        } else if (channelid === IMA_waitlist) {
+            guildName = 'Ironman Academy';
+        } else {
+            throw new Error('Invalid channel');
+        }
+        // dm the user
+        const dm = await member.createDM();
+        dm.send(`It is your turn to be invited to ${guildName}. Please leave your guild so you can get invited. `);
+        interaction.reply({ content: `${ign} has been asked to leave their guild`, ephemeral: true });
+        console.log("ask-to-leave");
+    } catch (error) {
+        console.error('Error asking user to leave:', error);
+        interaction.reply({ content: `An error occurred while asking the user to leave: ${error.message}`, ephemeral: true });
     }
 }
 
@@ -302,5 +351,8 @@ module.exports = {
     setup_apply_interaction,
     handle_apply_button,
     handle_guild_selection,
-    reestablishApplicationButtons
+    handle_guild_accept,
+    handle_guild_reject,
+    handle_guild_invited,
+    handle_guild_ask_to_leave
 };

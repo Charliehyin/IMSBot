@@ -17,7 +17,10 @@ const {
     setup_apply_interaction,
     handle_apply_button, 
     handle_guild_selection,
-    reestablishApplicationButtons 
+    handle_guild_accept,
+    handle_guild_reject,
+    handle_guild_invited,
+    handle_guild_ask_to_leave
 } = require('./src/bot/commands/guild_apply');
 
 // Create a new client instance
@@ -43,7 +46,6 @@ client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
     botStatus.isRunning = true; // Set bot status to running
     await registerSlashCommands();
-    await reestablishApplicationButtons(client);
 });
 
 // Slash command registration
@@ -106,6 +108,14 @@ client.on('interactionCreate', async interaction => {
             await handle_apply_button(interaction, db);
         } else if (interaction.customId.startsWith('apply_')) {
             await handle_guild_selection(interaction, db, client);
+        } else if (interaction.customId === 'guild_accept') {
+            await handle_guild_accept(interaction, db, client);
+        } else if (interaction.customId === 'guild_reject') {
+            await handle_guild_reject(interaction, db, client);
+        } else if (interaction.customId === 'guild_invited') {
+            await handle_guild_invited(interaction, db, client);
+        } else if (interaction.customId === 'guild_ask_to_leave') {
+            await handle_guild_ask_to_leave(interaction, db, client);
         }
     }
 });

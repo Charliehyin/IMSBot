@@ -2,11 +2,11 @@ CREATE DATABASE IF NOT EXISTS imsbot;
 
 USE imsbot;
 
-DROP TABLE IF EXISTS porn_messages;
-DROP TABLE IF EXISTS normal_messages;
-DROP TABLE IF EXISTS members;
-DROP TABLE IF EXISTS blacklist;
-DROP TABLE IF EXISTS punishments;
+-- DROP TABLE IF EXISTS porn_messages;
+-- DROP TABLE IF EXISTS normal_messages;
+-- DROP TABLE IF EXISTS members;
+-- DROP TABLE IF EXISTS blacklist;
+-- DROP TABLE IF EXISTS punishments;
 
 CREATE TABLE members
 (

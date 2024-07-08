@@ -26,10 +26,10 @@ async function setup_apply_interaction(interaction) {
                 **Note:** You must verify your Minecraft account before applying for a guild.
 
                 Universal Guild Requirements:
-    - Ironman
-    - All APIs enabled
-    - Private Island/Garden visits enabled for guild members
-    - Kicked after 7+ days of inactivity
+- Ironman
+- All APIs enabled
+- Private Island/Garden visits enabled for guild members
+- Kicked after 7+ days of inactivity
 
                 IMS Requirement: Skyblock level **${IMS_req}**
                 IMC Requirement: Skyblock level **${IMC_req}**

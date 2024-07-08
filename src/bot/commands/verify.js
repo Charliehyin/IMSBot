@@ -1,7 +1,86 @@
 require('dotenv').config();
 const { get_uuid_from_ign } = require('../utils/get_uuid_from_ign');
-const { SlashCommandBuilder } = require('discord.js');
-const { verified_role } = require('../constants');
+const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { verified_role, embedColor } = require('../constants');
+
+const setup_verify_command = new SlashCommandBuilder()
+    .setName('setup_verify')
+    .setDescription('Setup the verify button for the first time')
+    .setDefaultMemberPermissions(8);
+
+const setup_verify_interaction = async (interaction) => {
+    try {
+        const embed = new EmbedBuilder()
+            .setColor(embedColor)
+            .setTitle('Verification')
+            .setDescription(`Currently you only have access to certain channels. In order to gain full access you have to verify. To do this:
+
+1) Follow the video below(click the Help button), replacing CrypticPlasma's name with your Discord 
+2) Click on the verify button and type your Minecraft Name to verify! 
+
+Go ahead and create a ticket at <#846577784402608158> if you are still having trouble.`);
+        
+        const guildButtons = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('verify_button')
+                    .setLabel('Verify')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('verify_help')
+                    .setLabel('Help')
+                    .setStyle(ButtonStyle.Secondary)
+            );
+
+        const message = await interaction.channel.send({ embeds: [embed], components: [guildButtons] });
+
+        await interaction.reply({ content: 'Application button has been set up!', ephemeral: true });
+    } catch(error) {
+        console.error('Error setting up verify button:', error);
+        await interaction.reply({ content: `There was an error while trying to set up the verify button: ${error.message}`, ephemeral: true });
+    }
+}
+
+const verify_button_interaction = async (interaction, db) => {
+    try {
+        const modal = new ModalBuilder()
+			.setCustomId('verification_form')
+			.setTitle('Verification');
+
+		// Create the text input components
+		const ign_input = new TextInputBuilder()
+			.setCustomId('ign_input')
+			.setLabel("What's your Minecraft IGN?")
+			.setStyle(TextInputStyle.Short);
+
+		// An action row only holds one text input,
+		// so you need one action row per text input.
+		const firstActionRow = new ActionRowBuilder().addComponents(ign_input);
+
+		// Add inputs to the modal
+		modal.addComponents(firstActionRow);
+
+		// Show the modal to the user
+        console.log('Sending verification form')
+		await interaction.showModal(modal);
+    } catch (error) {
+        console.error('Error showing verification form:', error);
+        await interaction.reply({ content: `There was an error while trying to show the verification form: ${error.message}.`});
+    }
+}
+
+const help_button_interaction = async (interaction) => {
+    try {
+        await interaction.reply({
+            files: ['./assets/link_discord.mp4'],
+            ephemeral: true
+        });
+        console.log('Sent verification help video')
+    } catch (error) {
+        console.error('Error showing verification help:', error);
+        await interaction.reply({ content: `There was an error while trying to show the verification help: ${error.message}.`});
+    }
+}
 
 const verifyMember = async (discord_username, ign, discord_id, db) => {
     try {
@@ -41,7 +120,20 @@ const verifyMember = async (discord_username, ign, discord_id, db) => {
         }
 
         const data = await resp.json();
+        if (!data.player) {
+            return "    No player data found on Hypixel"
+        }
+        if (!data.player.socialMedia) {
+            return "    No social media linked on Hypixel"
+        }
+        if (!data.player.socialMedia.links) {
+            return "    No social media links found on Hypixel"
+        }
+        if (!data.player.socialMedia.links.DISCORD) {
+            return "    No discord linked on Hypixel"
+        }
         let linked_discord = data.player.socialMedia.links.DISCORD;
+        
         // Remove discord tag if exists
         linked_discord = linked_discord.match(/^(.*?)(?:#\d{4})?$/)[1];
 
@@ -73,6 +165,7 @@ const verifyMember = async (discord_username, ign, discord_id, db) => {
         }
     } catch (error) {
         console.error('Error fetching player data:', error);
+        return `    Error fetching player data: ${error.message}`;
     }
 }
 
@@ -84,9 +177,14 @@ const verify_command = new SlashCommandBuilder()
         .setDescription('Current linked Minecraft IGN on Hypixel')
         .setRequired(true))
 
-const verify_interaction = async (interaction, db) => {
+const verify_interaction = async (interaction, db, opts) => {
     const discord_username = interaction.user.username;
-    const ign = interaction.options.getString('ign');
+    let ign;
+    if (opts) {
+        ign = opts.ign;
+    } else {
+        ign = interaction.options.getString('ign');
+    }
     const discord_id = interaction.user.id;
 
     console.log(`Verifying ${discord_username} with IGN ${ign}`)
@@ -110,11 +208,11 @@ const verify_interaction = async (interaction, db) => {
                 console.log(`    Bot hoist is lower than member hoist, skipping nickname change`);
             }
 
-            await interaction.reply(`Successfully verified \`${discord_username}\` with IGN \`${ign}\``);
+            await interaction.reply({ content: `Successfully verified \`${discord_username}\` with IGN \`${ign}\``, ephemeral: true });
         }
         else {
             console.log(`    Failed to verify ${discord_username} to ${ign} for reason: \n${verified}`)
-            await interaction.reply(`Failed to verify \`${discord_username}\` to \`${ign}\` for reason: \n${verified.trim()}`);
+            await interaction.reply({ content: `Failed to verify \`${discord_username}\` to \`${ign}\` for reason: \n${verified.trim()}`, ephemeral: true });
         }
     }
     catch (error) {
@@ -124,4 +222,4 @@ const verify_interaction = async (interaction, db) => {
 }
 
 
-module.exports = { verifyMember, verify_command, verify_interaction }
+module.exports = { verifyMember, verify_command, verify_interaction, setup_verify_command, setup_verify_interaction, verify_button_interaction, help_button_interaction }

@@ -4,7 +4,14 @@ const mysql = require('mysql2/promise');
 const { botStatus } = require('./src/bot/botStatus');
 
 const { process_moderationapi_message } = require('./src/bot/moderationApi');
-const { verify_command, verify_interaction } = require('./src/bot/commands/verify');
+const { 
+    verify_command,
+    verify_interaction,
+    setup_verify_command,
+    setup_verify_interaction,
+    verify_button_interaction,
+    help_button_interaction
+} = require('./src/bot/commands/verify');
 const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_roles');
 const { automod_channel, general_channel } = require('./src/bot/constants');
 const { blacklist_command, blacklist_interaction } = require('./src/bot/commands/blacklist');
@@ -53,7 +60,8 @@ async function registerSlashCommands() {
         blacklist_command,
         get_uuid_command,
         punishments_command,
-        setup_apply_command
+        setup_apply_command,
+        setup_verify_command
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -74,9 +82,7 @@ async function registerSlashCommands() {
 
 client.on('interactionCreate', async interaction => {
     if (interaction.isChatInputCommand()) {
-        const { commandName } = interaction;
-
-        switch (commandName) {
+        switch (interaction.commandName) {
             case 'verify':
                 await verify_interaction(interaction, db);
                 break;
@@ -95,6 +101,9 @@ client.on('interactionCreate', async interaction => {
             case 'setup_apply':
                 await setup_apply_interaction(interaction);
                 break;
+            case 'setup_verify':
+                await setup_verify_interaction(interaction);
+                break;
         }
     } else if (interaction.isButton()) {
         if (interaction.customId.startsWith('apply_')) {
@@ -107,6 +116,14 @@ client.on('interactionCreate', async interaction => {
             await handle_guild_invited(interaction, db, client);
         } else if (interaction.customId === 'guild_ask_to_leave') {
             await handle_guild_ask_to_leave(interaction, db, client);
+        } else if (interaction.customId === 'verify_button') {
+            await verify_button_interaction(interaction, db);
+        } else if (interaction.customId === 'verify_help') {
+            await help_button_interaction(interaction);
+        }
+    } else if (interaction.isModalSubmit()) {
+        if (interaction.customId === 'verification_form') {
+            await verify_interaction(interaction, db, { 'ign': interaction.fields.getTextInputValue('ign_input') });
         }
     }
 });

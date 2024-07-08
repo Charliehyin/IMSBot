@@ -20,9 +20,6 @@ const IMA_req = 150;
 const IMC_req = 250;
 const IMS_req = 350;
 
-const APPLICATION_CHANNEL_ID = '1259593020211466261';
-const APPLICATION_MESSAGE_ID = '1259593608269402182';
-
 const IMA_waitlist = '1028063356260712498';
 const IMC_waitlist = '846808959536463972';
 const IMS_waitlist = '846732264238088202';
@@ -32,5 +29,5 @@ const IMC_application_channel = '846808920966168637';
 const IMA_application_channel = '1026652713825615932';
 
 module.exports = { embedColor, verified_role, ims_guild_id, imc_guild_id, ima_guild_id, ims_guild_role, imc_guild_role, ima_guild_role, king_role, god_role, divine_role, 
-                   lfp_plus_role, cheater_role, automod_channel, general_channel, IMA_req, IMC_req, IMS_req, APPLICATION_CHANNEL_ID, APPLICATION_MESSAGE_ID, IMA_waitlist, 
+                   lfp_plus_role, cheater_role, automod_channel, general_channel, IMA_req, IMC_req, IMS_req, IMA_waitlist, 
                    IMC_waitlist, IMS_waitlist, IMS_application_channel, IMC_application_channel, IMA_application_channel}

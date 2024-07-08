@@ -11,8 +11,6 @@ const { blacklist_command, blacklist_interaction } = require('./src/bot/commands
 const { get_uuid_command, get_uuid_interaction } = require('./src/bot/commands/get_uuid');
 const { punishments_command, punishments_interaction } = require('./src/bot/commands/punishments');
 const { 
-    guild_apply_command, 
-    guild_apply_interaction, 
     setup_apply_command, 
     setup_apply_interaction,
     handle_guild_selection,
@@ -55,7 +53,6 @@ async function registerSlashCommands() {
         blacklist_command,
         get_uuid_command,
         punishments_command,
-        guild_apply_command,
         setup_apply_command
     ].map(command => command.toJSON());
 
@@ -94,9 +91,6 @@ client.on('interactionCreate', async interaction => {
                 break;
             case 'punishments':
                 await punishments_interaction(interaction, db);
-                break;
-            case 'guild_apply':
-                await guild_apply_interaction(interaction, db);
                 break;
             case 'setup_apply':
                 await setup_apply_interaction(interaction);

@@ -1,22 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { get_ironman_skyblock_xp } = require('../utils/get_ironman_skyblock_xp');
-const { embedColor, IMA_req, IMC_req, IMS_req, APPLICATION_CHANNEL_ID, APPLICATION_MESSAGE_ID, IMS_waitlist, IMC_waitlist, IMA_waitlist, IMS_application_channel, IMC_application_channel, IMA_application_channel } = require('../constants');
-
-const guild_apply_command = new SlashCommandBuilder()
-    .setName('guild_apply')
-    .setDescription('Apply for a guild')
-    .addSubcommand(subcommand =>
-        subcommand
-            .setName('ironman_sweats')
-            .setDescription('Apply for the Ironman Sweats guild'))
-    .addSubcommand(subcommand =>
-        subcommand
-            .setName('ironman_casuals')
-            .setDescription('Apply for the Ironman Casuals guild'))
-    .addSubcommand(subcommand =>
-        subcommand
-            .setName('ironman_academy')
-            .setDescription('Apply for the Ironman Academy guild'));
+const { embedColor, IMA_req, IMC_req, IMS_req, IMS_waitlist, IMC_waitlist, IMA_waitlist, IMS_application_channel, IMC_application_channel, IMA_application_channel } = require('../constants');
 
 const setup_apply_command = new SlashCommandBuilder()
     .setName('setup_apply')
@@ -31,64 +15,6 @@ const setup_apply_command = new SlashCommandBuilder()
     .addBooleanOption(option =>
         option.setName('ima_closed')
         .setDescription('If Ironman Academy is closed'));
-
-async function guild_apply_interaction(interaction, db) {
-    try {
-        console.log('Applying for guild');
-        const subcommand = interaction.options.getSubcommand();
-        
-        // Get UUID from database
-        let sql = `SELECT uuid FROM members WHERE discord_id = ?`;
-        let [rows] = await db.query(sql, [interaction.user.id]);
-
-        if (rows.length === 0) {
-            await interaction.reply({ content: 'You must link your Minecraft account before applying for a guild', ephemeral: true });
-            return;
-        }
-
-        const uuid = rows[0].uuid;
-
-        // Check if user is on blacklist
-        sql = `SELECT * FROM blacklist WHERE uuid = ?`;
-        [rows] = await db.query(sql, [uuid]);
-
-        if (rows.length > 0 && rows[0].cheater) {
-            await interaction.reply({ content: `You are on the blacklist and cannot apply for a guild. \nReason: ${rows[0].reason}`, ephemeral: true });
-            return;
-        }
-
-        // Check skyblock xp
-        const skyblock_xp = await get_ironman_skyblock_xp(uuid);
-
-        let requiredXp, guildName;
-        switch (subcommand) {
-            case 'ironman_sweats':
-                requiredXp = IMS_req * 100;
-                guildName = 'Ironman Sweats';
-                break;
-            case 'ironman_casuals':
-                requiredXp = IMC_req * 100;
-                guildName = 'Ironman Casuals';
-                break;
-            case 'ironman_academy':
-                requiredXp = IMA_req * 100;
-                guildName = 'Ironman Academy';
-                break;
-        }
-
-        if (skyblock_xp < requiredXp) {
-            await interaction.reply({ content: `You must be Skyblock Level ${requiredXp / 100} to apply for ${guildName}`, ephemeral: true });
-            return;
-        }
-
-        // Here you would implement the actual application process
-        await interaction.reply({ content: `You have applied for ${guildName} (application process not yet implemented)`, ephemeral: true });
-
-    } catch (error) {
-        console.error('Error applying for guild:', error);
-        await interaction.reply({ content: `An error occurred while applying for a guild: ${error.message}`, ephemeral: true });
-    }
-}
 
 async function setup_apply_interaction(interaction) {
     const embed = new EmbedBuilder()
@@ -393,9 +319,7 @@ const handle_guild_ask_to_leave = async (interaction, db, client) => {
 }
 
 module.exports = {
-    guild_apply_command,
     setup_apply_command,
-    guild_apply_interaction,
     setup_apply_interaction,
     handle_guild_selection,
     handle_guild_accept,

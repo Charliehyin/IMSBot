@@ -17,71 +17,76 @@ const setup_apply_command = new SlashCommandBuilder()
         .setDescription('If Ironman Academy is closed'));
 
 async function setup_apply_interaction(interaction) {
-    const embed = new EmbedBuilder()
-        .setColor(embedColor)
-        .setTitle('Guild Applications')
-        .setDescription(`Click the button below to apply for a guild!
+        try {
+        const embed = new EmbedBuilder()
+            .setColor(embedColor)
+            .setTitle('Guild Applications')
+            .setDescription(`Click the button below to apply for a guild!
 
-            **Note:** You must verify your Minecraft account before applying for a guild.
+                **Note:** You must verify your Minecraft account before applying for a guild.
 
-            Universal Guild Requirements:
-- Ironman
-- All APIs enabled
-- Private Island/Garden visits enabled for guild members
-- Kicked after 7+ days of inactivity
+                Universal Guild Requirements:
+    - Ironman
+    - All APIs enabled
+    - Private Island/Garden visits enabled for guild members
+    - Kicked after 7+ days of inactivity
 
-            IMS Requirement: Skyblock level **${IMS_req}**
-            IMC Requirement: Skyblock level **${IMC_req}**
-            IMA Requirement: Skyblock level **${IMA_req}**
-            
-            You may view the waitlists for each guild in <#${IMS_waitlist}>, <#${IMC_waitlist}>, and <#${IMA_waitlist}>.
-            
-            **Please do not apply for multiple guilds at once.**`);
+                IMS Requirement: Skyblock level **${IMS_req}**
+                IMC Requirement: Skyblock level **${IMC_req}**
+                IMA Requirement: Skyblock level **${IMA_req}**
+                
+                You may view the waitlists for each guild in <#${IMS_waitlist}>, <#${IMC_waitlist}>, and <#${IMA_waitlist}>.
+                
+                **Please do not apply for multiple guilds at once.**`);
 
-    let IMS_button = new ButtonBuilder()
-        .setCustomId('apply_ironman_sweats')
-        .setLabel('Ironman Sweats')
-        .setStyle(ButtonStyle.Primary);
+        let IMS_button = new ButtonBuilder()
+            .setCustomId('apply_ironman_sweats')
+            .setLabel('Ironman Sweats')
+            .setStyle(ButtonStyle.Primary);
 
-    let IMC_button = new ButtonBuilder()
-        .setCustomId('apply_ironman_casuals')
-        .setLabel('Ironman Casuals')
-        .setStyle(ButtonStyle.Primary);
-    
-    let IMA_button = new ButtonBuilder()
-        .setCustomId('apply_ironman_academy')
-        .setLabel('Ironman Academy')
-        .setStyle(ButtonStyle.Primary);
+        let IMC_button = new ButtonBuilder()
+            .setCustomId('apply_ironman_casuals')
+            .setLabel('Ironman Casuals')
+            .setStyle(ButtonStyle.Primary);
+        
+        let IMA_button = new ButtonBuilder()
+            .setCustomId('apply_ironman_academy')
+            .setLabel('Ironman Academy')
+            .setStyle(ButtonStyle.Primary);
 
-    if (interaction.options.getBoolean('ims_closed')) {
-        IMS_button = IMS_button.setDisabled(true);
-        IMS_button = IMS_button.setLabel('Ironman Sweats (Closed)');
+        if (interaction.options.getBoolean('ims_closed')) {
+            IMS_button = IMS_button.setDisabled(true);
+            IMS_button = IMS_button.setLabel('Ironman Sweats (Closed)');
+        }
+
+        if (interaction.options.getBoolean('imc_closed')) {
+            IMC_button = IMC_button.setDisabled(true);
+            IMC_button = IMC_button.setLabel('Ironman Casuals (Closed)');
+        }
+
+        if (interaction.options.getBoolean('ima_closed')) {
+            IMA_button = IMA_button.setDisabled(true);
+            IMA_button = IMA_button.setLabel('Ironman Academy (Closed)');
+        }
+        
+        const guildButtons = new ActionRowBuilder()
+            .addComponents(
+                IMS_button,
+                IMC_button,
+                IMA_button
+            );
+
+        const message = await interaction.channel.send({ embeds: [embed], components: [guildButtons] });
+        
+        // Save the new message ID and channel ID
+        console.log(message.id);
+        console.log(interaction.channelId);
+
+        await interaction.reply({ content: 'Application button has been set up!', ephemeral: true });
+    } catch (error) {
+        console.error('Error setting up apply button:', error);
+        interaction.reply({ content: `An error occurred while setting up the apply button: ${error.message}`, ephemeral: true });
     }
-
-    if (interaction.options.getBoolean('imc_closed')) {
-        IMC_button = IMC_button.setDisabled(true);
-        IMC_button = IMC_button.setLabel('Ironman Casuals (Closed)');
-    }
-
-    if (interaction.options.getBoolean('ima_closed')) {
-        IMA_button = IMA_button.setDisabled(true);
-        IMA_button = IMA_button.setLabel('Ironman Academy (Closed)');
-    }
-    
-    const guildButtons = new ActionRowBuilder()
-        .addComponents(
-            IMS_button,
-            IMC_button,
-            IMA_button
-        );
-
-    const message = await interaction.channel.send({ embeds: [embed], components: [guildButtons] });
-    
-    // Save the new message ID and channel ID
-    console.log(message.id);
-    console.log(interaction.channelId);
-
-    await interaction.reply({ content: 'Application button has been set up!', ephemeral: true });
 }
 
 async function handle_guild_selection(interaction, db, client) {

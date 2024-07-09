@@ -1,6 +1,20 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { get_ironman_skyblock_xp } = require('../utils/get_ironman_skyblock_xp');
-const { embedColor, IMA_req, IMC_req, IMS_req, IMS_waitlist, IMC_waitlist, IMA_waitlist, IMS_application_channel, IMC_application_channel, IMA_application_channel } = require('../constants');
+const { 
+    embedColor, 
+    IMA_req, 
+    IMC_req, 
+    IMS_req, 
+    IMS_waitlist, 
+    IMC_waitlist, 
+    IMA_waitlist, 
+    IMS_application_channel, 
+    IMC_application_channel, 
+    IMA_application_channel,
+    ims_staff_role,
+    imc_staff_role,
+    ima_staff_role
+} = require('../constants');
 
 const setup_apply_command = new SlashCommandBuilder()
     .setName('setup_apply')
@@ -139,18 +153,18 @@ async function handle_guild_selection(interaction, db, client) {
         case 'ironman_sweats':
             // Application process for Ironman Sweats
             channel = await client.channels.fetch(IMS_application_channel);
-            applyMessage = await channel.send(`${ign} (${member}) has applied for Ironman Sweats!`)
+            applyMessage = await channel.send(`<@&${ims_staff_role}>\n${ign} (${member}) has applied for Ironman Sweats!`)
 
             break;
         case 'ironman_casuals':
             // Application process for Ironman Casuals
             channel = await client.channels.fetch(IMC_application_channel);
-            applyMessage = await channel.send(`${ign} (${member}) has applied for Ironman Casuals!`)
+            applyMessage = await channel.send(`<@&${imc_staff_role}>\n${ign} (${member}) has applied for Ironman Casuals!`)
             break;
         case 'ironman_academy':
             // Application process for Ironman Academy
             channel = await client.channels.fetch(IMA_application_channel);
-            applyMessage = await channel.send(`${ign} (${member}) has applied for Ironman Academy!`)
+            applyMessage = await channel.send(`<@&${ima_staff_role}>\n${ign} (${member}) has applied for Ironman Academy!`)
             break;    
     }
 
@@ -171,44 +185,76 @@ async function handle_guild_selection(interaction, db, client) {
     await interaction.reply({ content: `You have successfully applied for ${guildName.replace('_', ' ')}.`, ephemeral: true });
 }
 
+const get_application_message_content = (interaction) => {
+    let content = interaction.message.content;
+    content = content.split('\n')[1];
+    const ign = content.split(" ")[0];
+    const userid = content.split(" ")[1].replace("(", "").replace(")", "").replace("<@", "").replace(">", "");
+    const channelid = interaction.message.channel.id;
+    let guildName;
+    if (channelid === IMS_application_channel) {
+        guildName = 'Ironman Sweats';
+    } else if (channelid === IMC_application_channel) {
+        guildName = 'Ironman Casuals';
+    } else if (channelid === IMA_application_channel) {
+        guildName = 'Ironman Academy';
+    } else {
+        throw new Error('Invalid channel');
+    }
+    return { ign, userid, guildName };
+}
+
+const get_waitlist_message_content = (interaction) => {
+    let content = interaction.message.content;
+    const ign = content.split(" ")[0];
+    const userid = content.split(" ")[1].replace("(", "").replace(")", "").replace("<@", "").replace(">", "");
+    const channelid = interaction.message.channel.id;
+    let guildName;
+    if (channelid === IMS_waitlist) {
+        guildName = 'Ironman Sweats';
+    } else if (channelid === IMC_waitlist) {
+        guildName = 'Ironman Casuals';
+    } else if (channelid === IMA_waitlist) {
+        guildName = 'Ironman Academy';
+    } else {
+        throw new Error('Invalid channel');
+    }
+    return { ign, userid, guildName };
+}
+
 const handle_guild_accept = async (interaction, db, client) => {
     try {
         // message format: ign (<@user>) has applied for Ironman Sweats!
-        const ign = interaction.message.content.split(" ")[0];
-        const userid = interaction.message.content.split(" ")[1].replace("(", "").replace(")", "").replace("<@", "").replace(">", "");
+        const { ign, userid, guildName } = get_application_message_content(interaction);
         const member = await interaction.guild.members.fetch(userid);
-        const channelid = interaction.message.channel.id;
-        let guildName;
-        if (channelid === IMS_application_channel) {
-            guildName = 'Ironman Sweats';
-        } else if (channelid === IMC_application_channel) {
-            guildName = 'Ironman Casuals';
-        } else if (channelid === IMA_application_channel) {
-            guildName = 'Ironman Academy';
-        } else {
-            throw new Error('Invalid channel');
-        }
 
         let waitlist_message, channel, waitlist_channel;
+        const dm = await member.createDM();
         // add the user to the waitlist
         switch(guildName) {
             case 'Ironman Sweats':
                 channel = await client.channels.fetch(IMS_application_channel);
                 waitlist_channel = await client.channels.fetch(IMS_waitlist);
                 waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>)`);
+
                 channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
+                dm.send(`You have been accepted into ${guildName}. You are now on the waitlist. <#${IMS_waitlist}>`);
                 break;
             case 'Ironman Casuals':
                 channel = await client.channels.fetch(IMC_application_channel);
                 waitlist_channel = await client.channels.fetch(IMC_waitlist);
                 waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>)`);
+
                 channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
+                dm.send(`You have been accepted into ${guildName}. You are now on the waitlist. <#${IMC_waitlist}>`);
                 break;
             case 'Ironman Academy':
                 channel = await client.channels.fetch(IMA_application_channel);
                 waitlist_channel = await client.channels.fetch(IMA_waitlist);
                 waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>)`);
+
                 channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
+                dm.send(`You have been accepted into ${guildName}. You are now on the waitlist. <#${IMA_waitlist}>`);
                 break;
         }
 
@@ -221,14 +267,14 @@ const handle_guild_accept = async (interaction, db, client) => {
                 new ButtonBuilder()
                     .setCustomId('guild_ask_to_leave')
                     .setLabel('Ask To Leave Guild')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('guild_notify_invited')
+                    .setLabel('Notify Invited')
                     .setStyle(ButtonStyle.Primary)
             );
 
         await waitlist_message.edit({ components: [WaitlistActions] });
-
-        // dm the user
-        const dm = await member.createDM();
-        dm.send(`You have been accepted into ${guildName}. You are now on the waitlist. <#${IMS_waitlist}>`);
 
         // delete the message
         await interaction.message.delete();
@@ -241,19 +287,7 @@ const handle_guild_accept = async (interaction, db, client) => {
 
 const handle_guild_reject = async (interaction, db, client) => {
     try {
-        const ign = interaction.message.content.split(" ")[0];
-        const userid = interaction.message.content.split(" ")[1].replace("(", "").replace(")", "").replace("<@", "").replace(">", "");
-        const channelid = interaction.message.channel.id;
-        let guildName;
-        if (channelid === IMS_application_channel) {
-            guildName = 'Ironman Sweats';
-        } else if (channelid === IMC_application_channel) {
-            guildName = 'Ironman Casuals';
-        } else if (channelid === IMA_application_channel) {
-            guildName = 'Ironman Academy';
-        } else {
-            throw new Error('Invalid channel');
-        }
+        const { ign, userid, guildName } = get_application_message_content(interaction);
 
         let channel;
         switch(guildName) {
@@ -298,20 +332,9 @@ const handle_guild_ask_to_leave = async (interaction, db, client) => {
     try {
         // parse the user from the message. 
         // message format: ign (<@user>)
-        const ign = interaction.message.content.split(" ")[0];
-        const userid = interaction.message.content.split(" ")[1].replace("(", "").replace(")", "").replace("<@", "").replace(">", "");
+        const { ign, userid, guildName } = get_waitlist_message_content(interaction);
         const member = await interaction.guild.members.fetch(userid);
-        const channelid = interaction.message.channel.id;
-        let guildName;
-        if (channelid === IMS_waitlist) {
-            guildName = 'Ironman Sweats';
-        } else if (channelid === IMC_waitlist) {
-            guildName = 'Ironman Casuals';
-        } else if (channelid === IMA_waitlist) {
-            guildName = 'Ironman Academy';
-        } else {
-            throw new Error('Invalid channel');
-        }
+
         // dm the user
         const dm = await member.createDM();
         dm.send(`It is your turn to be invited to ${guildName}. Please leave your guild so you can get invited. `);
@@ -323,6 +346,22 @@ const handle_guild_ask_to_leave = async (interaction, db, client) => {
     }
 }
 
+const handle_guild_notify_invited = async (interaction, db, client) => {
+    try {
+        const { ign, userid, guildName } = get_waitlist_message_content(interaction);
+        const member = await interaction.guild.members.fetch(userid);
+
+        const dm = await member.createDM();
+        dm.send(`You have been invited to ${guildName}. Make sure to accept the invite. If you missed the invite, please make a ticket and show this message.`);
+        interaction.reply({ content: `${ign} has been notified of their invite`, ephemeral: true });
+        console.log("notify invited: ");
+        console.log(`    ${ign} has been invited to ${guildName}`);
+    } catch (error) {
+        console.error('Error notifying user to leave:', error);
+        interaction.reply({ content: `An error occurred while notifying the user to leave: ${error.message}`, ephemeral: true });
+    }
+}
+
 module.exports = {
     setup_apply_command,
     setup_apply_interaction,
@@ -330,5 +369,6 @@ module.exports = {
     handle_guild_accept,
     handle_guild_reject,
     handle_guild_invited,
-    handle_guild_ask_to_leave
+    handle_guild_ask_to_leave,
+    handle_guild_notify_invited
 };

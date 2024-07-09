@@ -26,7 +26,8 @@ const {
     handle_guild_accept,
     handle_guild_reject,
     handle_guild_invited,
-    handle_guild_ask_to_leave
+    handle_guild_ask_to_leave,
+    handle_guild_notify_invited
 } = require('./src/bot/commands/guild_apply');
 
 // Create a new client instance
@@ -128,6 +129,9 @@ client.on('interactionCreate', async interaction => {
                     break;
                 case 'guild_ask_to_leave':
                     await handle_guild_ask_to_leave(interaction, db, client);
+                    break;
+                case 'guild_notify_invited':
+                    await handle_guild_notify_invited(interaction, db, client);
                     break;
                 case 'verify_button':
                     await verify_button_interaction(interaction, db);

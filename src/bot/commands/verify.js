@@ -211,7 +211,7 @@ const verify_interaction = async (interaction, db, opts) => {
         if (verified === true) {
             // Add verified role to user
             const guild = interaction.guild;
-            const role = guild.roles.cache.get(verified_role);
+            const role = await guild.roles.fetch(verified_role);
             const member = interaction.member;
             member.roles.add(role);
             console.log(`    Added ${role.name} role to ${member.user.username}`);

@@ -7,6 +7,7 @@ USE imsbot;
 -- DROP TABLE IF EXISTS members;
 -- DROP TABLE IF EXISTS blacklist;
 -- DROP TABLE IF EXISTS punishments;
+-- DROP TABLE IF EXISTS applications;
 
 CREATE TABLE members
 (
@@ -51,6 +52,18 @@ CREATE TABLE punishments
     reason varchar(1024) not null,
     time_stamp varchar(32) not null,
     punishment_link varchar(128) not null,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE applications
+(
+    id int not null AUTO_INCREMENT,
+    discord_id varchar(32) not null,
+    ign varchar(32) not null,
+    uuid varchar(32) not null,
+    time_stamp varchar(32) not null,
+    guild varchar(32) not null,
+    application_status varchar(32) not null,
     PRIMARY KEY (id)
 );
 

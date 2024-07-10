@@ -35,6 +35,10 @@ const IMS_application_channel = '846732216268488736';
 const IMC_application_channel = '846808920966168637';
 const IMA_application_channel = '1026652713825615932';
 
+const IMS_application_category = '846731779306291210';
+const IMC_application_category = '846758786014511104';
+const IMA_application_category = '1026652567498928239';
+
 module.exports = { 
     embedColor, 
     ims_guild_id, 
@@ -62,5 +66,8 @@ module.exports = {
     IMS_waitlist, 
     IMS_application_channel, 
     IMC_application_channel, 
-    IMA_application_channel
+    IMA_application_channel,
+    IMS_application_category,
+    IMC_application_category,
+    IMA_application_category
 }

@@ -64,6 +64,7 @@ CREATE TABLE applications
     time_stamp varchar(32) not null,
     guild varchar(32) not null,
     application_status varchar(32) not null,
+    application_channel varchar(32) not null,
     PRIMARY KEY (id)
 );
 

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType  } = require('discord.js');
 const { get_ironman_skyblock_xp } = require('../utils/get_ironman_skyblock_xp');
 const { 
     embedColor, 
@@ -11,6 +11,9 @@ const {
     IMS_application_channel, 
     IMC_application_channel, 
     IMA_application_channel,
+    IMS_application_category,
+    IMC_application_category,
+    IMA_application_category,
     ims_staff_role,
     imc_staff_role,
     ima_staff_role
@@ -30,7 +33,7 @@ const setup_apply_command = new SlashCommandBuilder()
         option.setName('ima_closed')
         .setDescription('If Ironman Academy is closed'));
 
-async function setup_apply_interaction(interaction) {
+const setup_apply_interaction = async (interaction) => {
         try {
         const embed = new EmbedBuilder()
             .setColor(embedColor)
@@ -103,7 +106,36 @@ async function setup_apply_interaction(interaction) {
     }
 }
 
-async function handle_guild_selection(interaction, db, client) {
+const create_application = async (interaction, db, client, member, ign, application_channel, staff_role, application_category) => {
+    try {
+        const channel = await client.channels.fetch(application_channel);
+        const applyMessage = await channel.send(`<@&${staff_role}>\n${ign} (${member}) has applied for Ironman Sweats!`);
+
+        // Create a new channel in application_category
+        const application = await interaction.guild.channels.create({
+            name: `application-${ign}`,
+            type: ChannelType.GuildText,
+            parent: application_category,
+            permissionOverwrites: null
+        });
+
+        await application.permissionOverwrites.create(interaction.guild.id, { ViewChannel: false });
+        await application.permissionOverwrites.create(member.id, { ViewChannel: true });
+        await application.permissionOverwrites.create(staff_role, { ViewChannel: true });
+
+
+        // Send a message in the new channel
+        await application.send(`Welcome to your application channel, ${member}!`);
+
+        return { applyMessage, channelId: application.id };
+
+    } catch (error) {
+        console.error('Error creating application:', error);
+        return null;
+    }
+}
+
+const handle_guild_selection = async (interaction, db, client) => {
     try {
         console.log('Applying for guild')
         let sql = `SELECT uuid FROM members WHERE discord_id = ?`;
@@ -164,29 +196,28 @@ async function handle_guild_selection(interaction, db, client) {
             return;
         }
 
-        let applyMessage, channel;
+        let applyMessage, channelId;
         switch(guildName) {
             case 'Ironman Sweats':
-                // Application process for Ironman Sweats
-                channel = await client.channels.fetch(IMS_application_channel);
-                applyMessage = await channel.send(`<@&${ims_staff_role}>\n${ign} (${member}) has applied for Ironman Sweats!`)
-
+                ({ applyMessage, channelId } = await create_application(interaction, db, client, member, ign, IMS_application_channel, ims_staff_role, IMS_application_category));
                 break;
             case 'Ironman Casuals':
-                // Application process for Ironman Casuals
-                channel = await client.channels.fetch(IMC_application_channel);
-                applyMessage = await channel.send(`<@&${imc_staff_role}>\n${ign} (${member}) has applied for Ironman Casuals!`)
+                ({applyMessage, channelId} = await create_application(interaction, db, client, member, ign, IMC_application_channel, imc_staff_role, IMC_application_category));
                 break;
             case 'Ironman Academy':
-                // Application process for Ironman Academy
-                channel = await client.channels.fetch(IMA_application_channel);
-                applyMessage = await channel.send(`<@&${ima_staff_role}>\n${ign} (${member}) has applied for Ironman Academy!`)
+                ({applyMessage, channelId} = await create_application(interaction, db, client, member, ign, IMA_application_channel, ima_staff_role, IMA_application_category));
                 break;    
         }
 
+        if (applyMessage === null) {
+            await interaction.reply({ content: `An error occurred while applying for the guild: ${error.message}\nPlease make a ticket. `, ephemeral: true });
+            return;
+        }
+        console.log(`    Application channel has been created: ${channelId}`)
+
         // Add the application to the database
-        sql = `INSERT INTO applications (uuid, ign, discord_id, guild, application_status, time_stamp) VALUES (?, ?, ?, ?, 'open', ?)`;
-        await db.query(sql, [uuid, ign, interaction.user.id, guildName, Math.floor(interaction.createdTimestamp/1000)]);
+        sql = `INSERT INTO applications (uuid, ign, discord_id, guild, application_channel, application_status, time_stamp) VALUES (?, ?, ?, ?, ?, 'open', ?)`;
+        await db.query(sql, [uuid, ign, interaction.user.id, guildName, channelId, Math.floor(interaction.createdTimestamp/1000)]);
         console.log(`    Application has been added to the database`)
 
         const ApplicationActions = new ActionRowBuilder()
@@ -205,8 +236,8 @@ async function handle_guild_selection(interaction, db, client) {
 
         await interaction.reply({ content: `You have successfully applied for ${guildName.replace('_', ' ')}.`, ephemeral: true });
     } catch (error) {
-    console.error('Error applying for guild:', error);
-    interaction.reply({ content: `An error occurred while applying for the guild: ${error.message}`, ephemeral: true });
+        console.error('Error applying for guild:', error);
+        interaction.reply({ content: `An error occurred while applying for the guild: ${error.message}`, ephemeral: true });
     }
 }
 
@@ -268,6 +299,29 @@ const handle_guild_accept = async (interaction, db, client) => {
         const dm = await member.createDM();
 
         console.log(`    Accepting ${ign} into ${guildName}`)
+
+        // fetch the application channel from the database
+        let sql = `SELECT application_channel FROM applications WHERE ign = LOWER(?) AND guild = ? AND application_status = 'open'`;
+        let [rows] = await db.query(sql, [ign.toLowerCase(), guildName]);
+        if (rows.length === 0) {
+            console.log('    No open application found');
+            return;
+        }
+
+        let application_channel = rows[0].application_channel;
+        let accepted_message = `You have been accepted into ${guildName}. You are now on the waitlist.
+
+Before joining the guild make sure that you:
+- Enable visits for both island and garden (stand on each island and enable them to guild members or anyone)
+- Ensure you keep your APIs on at all times
+- Make sure to set /mystatus online
+- Read <#930986320225005598>
+- IF YOU HAVE MULTIPLE IRONMAN PROFILES - ENABLE API'S ON ALL OF THEM
+
+If you are inactive for longer than 7 days you will be kicked.
+
+If you miss the invite - be patient, you will be reinvited. DO NOT MAKE A TICKET\n`;
+
         // add the user to the waitlist
         switch(guildName) {
             case 'Ironman Sweats':
@@ -276,7 +330,7 @@ const handle_guild_accept = async (interaction, db, client) => {
                 waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>)`);
 
                 channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
-                dm.send(`You have been accepted into ${guildName}. You are now on the waitlist. <#${IMS_waitlist}>`);
+                accepted_message += `<#${IMS_waitlist}>`;
                 break;
             case 'Ironman Casuals':
                 channel = await client.channels.fetch(IMC_application_channel);
@@ -284,7 +338,7 @@ const handle_guild_accept = async (interaction, db, client) => {
                 waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>)`);
 
                 channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
-                dm.send(`You have been accepted into ${guildName}. You are now on the waitlist. <#${IMC_waitlist}>`);
+                accepted_message += `<#${IMC_waitlist}>`;
                 break;
             case 'Ironman Academy':
                 channel = await client.channels.fetch(IMA_application_channel);
@@ -292,7 +346,7 @@ const handle_guild_accept = async (interaction, db, client) => {
                 waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>)`);
 
                 channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
-                dm.send(`You have been accepted into ${guildName}. You are now on the waitlist. <#${IMA_waitlist}>`);
+                accepted_message += `<#${IMA_waitlist}>`;
                 break;
         }
 
@@ -315,11 +369,16 @@ const handle_guild_accept = async (interaction, db, client) => {
         await waitlist_message.edit({ components: [WaitlistActions] });
 
         // Update database status
-        const sql = `UPDATE applications SET application_status = 'accepted' WHERE ign = LOWER(?) AND guild = ? AND application_status = 'open'`;
-        const [rows] = await db.query(sql, [ign.toLowerCase(), guildName]);
+        sql = `UPDATE applications SET application_status = 'accepted' WHERE ign = LOWER(?) AND guild = ? AND application_status = 'open'`;
+        [rows] = await db.query(sql, [ign.toLowerCase(), guildName]);
         if (rows.affectedRows === 0) {
            console.log('    No open application found');
         }
+
+        // dm the user and send a message in the application channel
+        application_channel = await client.channels.fetch(application_channel);
+        dm.send(accepted_message);
+        application_channel.send(accepted_message);
 
         // delete the message
         await interaction.message.delete();
@@ -336,6 +395,15 @@ const handle_guild_reject = async (interaction, db, client) => {
         const { ign, userid, guildName } = get_application_message_content(interaction);
 
         console.log(`    Rejecting ${ign} from ${guildName}`)
+
+        let sql = `SELECT application_channel FROM applications WHERE ign = LOWER(?) AND guild = ? AND application_status = 'open'`;
+        let [rows] = await db.query(sql, [ign.toLowerCase(), guildName]);
+        if (rows.length === 0) {
+            console.log('    No open application found');
+            return;
+        }
+
+        let application_channel = rows[0].application_channel;
 
         let channel;
         switch(guildName) {
@@ -356,15 +424,30 @@ const handle_guild_reject = async (interaction, db, client) => {
         const member = await interaction.guild.members.fetch(userid);
 
         // Update database status
-        const sql = `UPDATE applications SET application_status = 'rejected' WHERE ign = LOWER(?) AND guild = ? AND application_status = 'open'`;
-        const [rows] = await db.query(sql, [ign.toLowerCase(), guildName]);
+        sql = `UPDATE applications SET application_status = 'rejected' WHERE ign = LOWER(?) AND guild = ? AND application_status = 'open'`;
+        [rows] = await db.query(sql, [ign.toLowerCase(), guildName]);
         if (rows.affectedRows === 0) {
             console.log('    No open application found');
         }
 
-        // dm the user
+        let rejection_message = `You have been rejected from ${guildName}`;
+
+        // dm the user and send a message in the application channel
         const dm = await member.createDM();
-        dm.send(`You have been rejected from ${guildName}`);
+        dm.send(rejection_message);
+        application_channel = await client.channels.fetch(application_channel);
+        application_channel.send(rejection_message);
+
+        // Create a close channel button
+        const CloseButton = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('application_close')
+                    .setLabel('Close Channel')
+                    .setStyle(ButtonStyle.Danger)
+            );
+
+        await application_channel.send({ components: [CloseButton] });
         
         await interaction.message.delete();
     }
@@ -374,10 +457,47 @@ const handle_guild_reject = async (interaction, db, client) => {
     }
 }
 
+const handle_application_close = async (interaction, db, client) => {
+    try {
+        console.log('Closing application channel');
+
+        let application_channel = interaction.message.channel;
+
+        await application_channel.delete();
+    } catch (error) {
+        console.error('Error closing application channel:', error);
+        interaction.reply({ content: `An error occurred while closing the application channel: ${error.message}`, ephemeral: true });
+    }
+}
+
 const handle_guild_invited = async (interaction, db, client) => {
     try {
+        console.log('Marking user as invited')
+
+        // get the application channel from db
+        const { ign, userid, guildName } = get_waitlist_message_content(interaction);
+        const member = await interaction.guild.members.fetch(userid);
+
+        let sql = `SELECT application_channel FROM applications WHERE ign = LOWER(?) AND guild = ? AND application_status = 'accepted'`;
+        let [rows] = await db.query(sql, [ign.toLowerCase(), guildName]);
+        if (rows.length === 0) {
+            console.log('    No accepted application found');
+            return;
+        }
+
+        let application_channel = rows[0].application_channel;
+        application_channel = await client.channels.fetch(application_channel);
+
+        // set status to invited
+        sql = `UPDATE applications SET application_status = 'invited' WHERE ign = LOWER(?) AND guild = ? AND application_status = 'accepted'`;
+        [rows] = await db.query(sql, [ign.toLowerCase(), guildName]);
+        if (rows.affectedRows === 0) {
+            console.log('    No accepted application found');
+        }
+
+        // delete the application channel
+        await application_channel.delete();
         await interaction.message.delete();
-        console.log("invited");
     } catch (error) {
         console.error('Error inviting user:', error);
         interaction.reply({ content: `An error occurred while inviting the user: ${error.message}`, ephemeral: true });
@@ -386,16 +506,29 @@ const handle_guild_invited = async (interaction, db, client) => {
 
 const handle_guild_ask_to_leave = async (interaction, db, client) => {
     try {
-        // parse the user from the message. 
-        // message format: ign (<@user>)
+        console.log('Asking user to leave their guild')
         const { ign, userid, guildName } = get_waitlist_message_content(interaction);
         const member = await interaction.guild.members.fetch(userid);
 
-        // dm the user
+        let sql = `SELECT application_channel FROM applications WHERE ign = LOWER(?) AND guild = ? AND application_status = 'accepted'`;
+        let [rows] = await db.query(sql, [ign.toLowerCase(), guildName]);
+        if (rows.length === 0) {
+            console.log('    No accepted application found');
+            return;
+        }
+
+        let application_channel = rows[0].application_channel;
+        application_channel = await client.channels.fetch(application_channel);
+
+        let ask_to_leave_message = `It is your turn to be invited to ${guildName}. Please leave your guild so you can get invited. `;
+
         const dm = await member.createDM();
-        dm.send(`It is your turn to be invited to ${guildName}. Please leave your guild so you can get invited. `);
+        dm.send(ask_to_leave_message);
+
+        application_channel.send(ask_to_leave_message);
+
         interaction.reply({ content: `${ign} has been asked to leave their guild`, ephemeral: true });
-        console.log("ask-to-leave");
+        console.log(`    ${ign} has been asked to leave their guild`)
     } catch (error) {
         console.error('Error asking user to leave:', error);
         interaction.reply({ content: `An error occurred while asking the user to leave: ${error.message}`, ephemeral: true });
@@ -404,13 +537,28 @@ const handle_guild_ask_to_leave = async (interaction, db, client) => {
 
 const handle_guild_notify_invited = async (interaction, db, client) => {
     try {
+        console.log('Notifying user they have been invited')
         const { ign, userid, guildName } = get_waitlist_message_content(interaction);
         const member = await interaction.guild.members.fetch(userid);
 
+        let sql = `SELECT application_channel FROM applications WHERE ign = LOWER(?) AND guild = ? AND application_status = 'accepted'`;
+        let [rows] = await db.query(sql, [ign.toLowerCase(), guildName]);
+        if (rows.length === 0) {
+            console.log('    No accepted application found');
+            return;
+        }
+
+        let application_channel = rows[0].application_channel;
+        application_channel = await client.channels.fetch(application_channel);
+
+        let notify_invited_message = `You have been invited to ${guildName}. Make sure to accept the invite. If you missed the invite, don't worry, you will receive another one. `;
+
         const dm = await member.createDM();
-        dm.send(`You have been invited to ${guildName}. Make sure to accept the invite. If you missed the invite, please make a ticket and show this message.`);
+        dm.send(notify_invited_message);
+
+        application_channel.send(notify_invited_message);
+
         interaction.reply({ content: `${ign} has been notified of their invite`, ephemeral: true });
-        console.log("notify invited: ");
         console.log(`    ${ign} has been invited to ${guildName}`);
     } catch (error) {
         console.error('Error notifying user to leave:', error);
@@ -424,6 +572,7 @@ module.exports = {
     handle_guild_selection,
     handle_guild_accept,
     handle_guild_reject,
+    handle_application_close,
     handle_guild_invited,
     handle_guild_ask_to_leave,
     handle_guild_notify_invited

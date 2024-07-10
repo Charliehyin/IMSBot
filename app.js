@@ -25,6 +25,7 @@ const {
     handle_guild_selection,
     handle_guild_accept,
     handle_guild_reject,
+    handle_application_close,
     handle_guild_invited,
     handle_guild_ask_to_leave,
     handle_guild_notify_invited
@@ -123,6 +124,9 @@ client.on('interactionCreate', async interaction => {
                     break;
                 case 'guild_reject':
                     await handle_guild_reject(interaction, db, client);
+                    break;
+                case 'application_close':
+                    await handle_application_close(interaction, db, client);
                     break;
                 case 'guild_invited':
                     await handle_guild_invited(interaction, db, client);

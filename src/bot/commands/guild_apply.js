@@ -106,10 +106,10 @@ const setup_apply_interaction = async (interaction) => {
     }
 }
 
-const create_application = async (interaction, db, client, member, ign, application_channel, staff_role, application_category) => {
+const create_application = async (interaction, db, client, member, ign, application_channel, staff_role, application_category, guildName) => {
     try {
         const channel = await client.channels.fetch(application_channel);
-        const applyMessage = await channel.send(`<@&${staff_role}>\n${ign} (${member}) has applied for Ironman Sweats!`);
+        const applyMessage = await channel.send(`<@&${staff_role}>\n[${ign}](https://sky.shiiyu.moe/stats/${ign}) (${member}) has applied for ${guildName}!`);
 
         // Create a new channel in application_category
         const application = await interaction.guild.channels.create({
@@ -199,13 +199,13 @@ const handle_guild_selection = async (interaction, db, client) => {
         let applyMessage, channelId;
         switch(guildName) {
             case 'Ironman Sweats':
-                ({ applyMessage, channelId } = await create_application(interaction, db, client, member, ign, IMS_application_channel, ims_staff_role, IMS_application_category));
+                ({ applyMessage, channelId } = await create_application(interaction, db, client, member, ign, IMS_application_channel, ims_staff_role, IMS_application_category, guildName));
                 break;
             case 'Ironman Casuals':
-                ({applyMessage, channelId} = await create_application(interaction, db, client, member, ign, IMC_application_channel, imc_staff_role, IMC_application_category));
+                ({applyMessage, channelId} = await create_application(interaction, db, client, member, ign, IMC_application_channel, imc_staff_role, IMC_application_category, guildName));
                 break;
             case 'Ironman Academy':
-                ({applyMessage, channelId} = await create_application(interaction, db, client, member, ign, IMA_application_channel, ima_staff_role, IMA_application_category));
+                ({applyMessage, channelId} = await create_application(interaction, db, client, member, ign, IMA_application_channel, ima_staff_role, IMA_application_category, guildName));
                 break;    
         }
 
@@ -244,9 +244,8 @@ const handle_guild_selection = async (interaction, db, client) => {
 const get_application_message_content = (interaction) => {
     try {
         let content = interaction.message.content;
-        content = content.split('\n')[1];
-        const ign = content.split(" ")[0];
-        const userid = content.split(" ")[1].replace("(", "").replace(")", "").replace("<@", "").replace(">", "");
+        const ign = content.match(/\[(.*?)\]/)[1];
+        const userid = content.match(/<@(\d*?)>/)[1];
         const channelid = interaction.message.channel.id;
         let guildName;
         if (channelid === IMS_application_channel) {
@@ -269,7 +268,7 @@ const get_waitlist_message_content = (interaction) => {
     try {
         let content = interaction.message.content;
         const ign = content.split(" ")[0];
-        const userid = content.split(" ")[1].replace("(", "").replace(")", "").replace("<@", "").replace(">", "");
+        const userid = content.match(/<@(\d*?)>/)[1];
         const channelid = interaction.message.channel.id;
         let guildName;
         if (channelid === IMS_waitlist) {

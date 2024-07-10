@@ -33,6 +33,21 @@ const setup_apply_command = new SlashCommandBuilder()
         option.setName('ima_closed')
         .setDescription('If Ironman Academy is closed'));
 
+const check_permissions = async (interaction) => {
+    try {
+        const member = await interaction.guild.members.fetch(interaction.user.id);
+        if (!member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+            console.log('User does not have permission to use this button')
+            await interaction.reply({ content: 'You do not have permission to use this button', ephemeral: true });
+            return false;
+        }
+        return true;
+    } catch (error) {
+        console.error('Error checking permissions:', error);
+        return false;
+    }
+}
+
 const setup_apply_interaction = async (interaction) => {
         try {
         const embed = new EmbedBuilder()
@@ -471,6 +486,8 @@ const handle_application_close = async (interaction, db, client) => {
 
 const handle_guild_invited = async (interaction, db, client) => {
     try {
+        if (!await check_permissions(interaction)) return;
+
         console.log('Marking user as invited')
 
         // get the application channel from db
@@ -505,6 +522,8 @@ const handle_guild_invited = async (interaction, db, client) => {
 
 const handle_guild_ask_to_leave = async (interaction, db, client) => {
     try {
+        if (!await check_permissions(interaction)) return;
+
         console.log('Asking user to leave their guild')
         const { ign, userid, guildName } = get_waitlist_message_content(interaction);
         const member = await interaction.guild.members.fetch(userid);
@@ -536,6 +555,8 @@ const handle_guild_ask_to_leave = async (interaction, db, client) => {
 
 const handle_guild_notify_invited = async (interaction, db, client) => {
     try {
+        if (!await check_permissions(interaction)) return;
+
         console.log('Notifying user they have been invited')
         const { ign, userid, guildName } = get_waitlist_message_content(interaction);
         const member = await interaction.guild.members.fetch(userid);

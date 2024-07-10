@@ -2,12 +2,9 @@ require('dotenv').config();
 const { SlashCommandBuilder } = require('discord.js');
 const { get_guild_info } = require('../utils/get_guild_info');
 const { check_ironman_hotm3 } = require('../utils/check_ironman_hotm3');
-const { ims_guild_id, imc_guild_id, ima_guild_id, ims_guild_role, imc_guild_role, ima_guild_role, king_role, god_role, divine_role, lfp_plus_role } = require('../constants');
+const { ims_guild_id, imc_guild_id, ima_guild_id, ims_guild_role, imc_guild_role, ima_guild_role, king_role, god_role, divine_role, lfp_plus_role, verified_role } = require('../constants');
 
 const add_rank_role = async (interaction, rank, roles) => {
-    const discord_id = interaction.member.id;
-    const guild = interaction.guild;
-
     if (rank === 'King') {
         interaction.member.roles.add(king_role);
         console.log('    King role added');
@@ -26,13 +23,12 @@ const add_rank_role = async (interaction, rank, roles) => {
 
 const sync_guild_info = async (interaction, uuid) => {
     const [guild_id, rank] = await get_guild_info(uuid);
-    let roles = [];
+    let roles = [verified_role];
 
     if (guild_id === -1) {
         return [];
     }
 
-    const discord_id = interaction.member.id;
     // Check if user is in IMS guild
     if (guild_id === ims_guild_id) {
         console.log(`    ${uuid} is in IMS guild`);
@@ -86,6 +82,11 @@ const sync_roles_interaction = async (interaction, db) => {
         const uuid = rows[0].uuid;
 
         console.log(`    uuid: ${uuid}, discord_id: ${discord_id}`)
+
+        interaction.member.roles.remove([king_role, god_role, divine_role, ims_guild_role, imc_guild_role, ima_guild_role, lfp_plus_role]);
+        console.log('    Old roles removed');
+
+        interaction.member.roles.add(verified_role);
 
         let roles = await sync_guild_info(interaction, uuid);
         console.log('    Guild roles synced')

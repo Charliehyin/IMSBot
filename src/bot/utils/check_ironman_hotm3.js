@@ -4,7 +4,6 @@ const check_ironman_hotm3 = async (uuid) => {
     const fetch = (await import('node-fetch')).default;
     const key = process.env.HYPIXEL_API_KEY;
     const url = `https://api.hypixel.net/v2/skyblock/profiles?key=${key}&uuid=${uuid}`;
-    console.log(url)
 
     try {
         const resp = await fetch(url, {

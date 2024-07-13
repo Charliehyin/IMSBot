@@ -83,10 +83,10 @@ const sync_roles_interaction = async (interaction, db) => {
 
         console.log(`    uuid: ${uuid}, discord_id: ${discord_id}`)
 
-        interaction.member.roles.remove([king_role, god_role, divine_role, ims_guild_role, imc_guild_role, ima_guild_role, lfp_plus_role]);
+        await interaction.member.roles.remove([king_role, god_role, divine_role, ims_guild_role, imc_guild_role, ima_guild_role, lfp_plus_role]);
         console.log('    Old roles removed');
 
-        interaction.member.roles.add(verified_role);
+        await interaction.member.roles.add(verified_role);
 
         let roles = await sync_guild_info(interaction, uuid);
         console.log('    Guild roles synced')

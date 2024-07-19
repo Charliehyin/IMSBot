@@ -124,8 +124,8 @@ const verifyMember = async (discord_username, ign, discord_id, db) => {
         let sql = `SELECT ign FROM members WHERE discord_id = ? AND uuid = ?`;
         let [rows] = await db.query(sql, [discord_id, uuid]);
         if (rows.length > 0) {
-            db.query(`UPDATE members SET ign = ? WHERE discord_id = ?`, [ign, discord_id])
-            console.log("    Member already exists in database")
+            await db.query(`UPDATE members SET ign = ? WHERE discord_id = ?`, [ign, discord_id]);
+            console.log("    Member already exists in database");
             return true;
         }
 
@@ -171,18 +171,18 @@ const verifyMember = async (discord_username, ign, discord_id, db) => {
             if (rows.length > 0) {
                 // Update the minecraft ign in the database
                 sql = `UPDATE members SET ign = ? WHERE discord_id = ?`;
-                db.query(sql, [ign, discord_id]);
+                await db.query(sql, [ign, discord_id]);
                 
                 // Update the minecraft uuid in the database
                 sql = `UPDATE members SET uuid = ? WHERE discord_id = ?`;
-                db.query(sql, [uuid, discord_id]);
+                await db.query(sql, [uuid, discord_id]);
 
                 // TODO: Check if this member is blacklisted or cheater
             } else {
                 console.log("    Adding new member to database")
                 // Insert the member into the database
                 sql = `INSERT INTO members (discord_id, ign, uuid) VALUES (?, ?, ?)`;
-                db.query(sql, [discord_id, ign, uuid]);
+                await db.query(sql, [discord_id, ign, uuid]);
             }
             return true;
         } else {
@@ -213,12 +213,12 @@ const verify_interaction = async (interaction, db, opts) => {
             const guild = interaction.guild;
             const role = await guild.roles.fetch(verified_role);
             const member = interaction.member;
-            member.roles.add(role);
+            await member.roles.add(role);
             console.log(`    Added ${role.name} role to ${member.user.username}`);
 
             // Rename user to minecraft ign if bot hoist is higher than member hoist
             if (guild.members.me.roles.highest.comparePositionTo(member.roles.highest) > 0) {
-                member.setNickname(ign);
+                await member.setNickname(ign);
                 console.log(`    Set nickname to ${ign}`);
             }
             else {

@@ -1,3 +1,3 @@
 USE imsbot;
 
-select * from applications;
+SELECT * from members;

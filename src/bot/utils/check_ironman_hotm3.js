@@ -16,12 +16,19 @@ const check_ironman_hotm3 = async (uuid) => {
         if (resp.ok) {
             const data = await resp.json();
             for (let profile of data.profiles) {
+                console.log(`    Checking profile ${profile.profile_id}`);
+                console.log(`    Game mode: ${profile.game_mode}`);
                 if (!profile.members[uuid]) {
                     continue;
                 }
                 if (profile.game_mode !== 'ironman') {
                     continue;
                 }
+                if (!profile.members[uuid].mining_core) {
+                    console.log(`    ${uuid} does not have mining core`);
+                    continue;
+                }
+                console.log(`    Hotm xp: ${profile.members[uuid].mining_core.experience}`);
                 if (profile.members[uuid].mining_core.experience >= 12000) {
                     console.log(`    ${uuid} has Ironman HOTM3`);
                     return true;

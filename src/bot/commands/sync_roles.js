@@ -6,15 +6,15 @@ const { ims_guild_id, imc_guild_id, ima_guild_id, ims_guild_role, imc_guild_role
 
 const add_rank_role = async (interaction, rank, roles) => {
     if (rank === 'King') {
-        interaction.member.roles.add(king_role);
+        await interaction.member.roles.add(king_role);
         console.log('    King role added');
         roles.push(king_role);
     } else if (rank === 'God') {
-        interaction.member.roles.add(god_role);
+        await interaction.member.roles.add(god_role);
         console.log('    God role added');
         roles.push(god_role)
     } else if (rank === 'Divine') {
-        interaction.member.roles.add(divine_role);
+        await interaction.member.roles.add(divine_role);
         console.log('    Divine role added');
         roles.push(divine_role)
     }
@@ -26,14 +26,14 @@ const sync_guild_info = async (interaction, uuid) => {
     let roles = [verified_role];
 
     if (guild_id === -1) {
-        return [];
+        return roles;
     }
 
     // Check if user is in IMS guild
     if (guild_id === ims_guild_id) {
         console.log(`    ${uuid} is in IMS guild`);
 
-        interaction.member.roles.add(ims_guild_role);
+        await interaction.member.roles.add(ims_guild_role);
         console.log('    IMS role added');
         roles.push(ims_guild_role);
 
@@ -43,7 +43,7 @@ const sync_guild_info = async (interaction, uuid) => {
     if (guild_id === imc_guild_id) {
         console.log(`    ${uuid} is in IMC guild`);
 
-        interaction.member.roles.add(imc_guild_role);
+        await interaction.member.roles.add(imc_guild_role);
         console.log('    IMC role added');
         roles.push(imc_guild_role);
 
@@ -53,7 +53,7 @@ const sync_guild_info = async (interaction, uuid) => {
     if (guild_id === ima_guild_id) {
         console.log(`    ${uuid} is in IMA guild`);
 
-        interaction.member.roles.add(ima_guild_role);
+        await interaction.member.roles.add(ima_guild_role);
         console.log('    IMA role added');
         roles.push(ima_guild_role);
 
@@ -76,7 +76,7 @@ const sync_roles_interaction = async (interaction, db) => {
         let sql = `SELECT uuid FROM members WHERE discord_id = ?`;
         let [rows] = await db.query(sql, [discord_id]);
         if (rows.length === 0) {
-            interaction.reply('You are not verified');
+            await interaction.reply('You are not verified');
             return;
         }
         const uuid = rows[0].uuid;
@@ -95,7 +95,7 @@ const sync_roles_interaction = async (interaction, db) => {
         const ironman = await check_ironman_hotm3(uuid);
 
         if (ironman) {
-            interaction.member.roles.add(lfp_plus_role);
+            await interaction.member.roles.add(lfp_plus_role);
             console.log('    lfp plus role added');
             roles.push(lfp_plus_role);
         }

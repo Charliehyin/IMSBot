@@ -196,11 +196,13 @@ const verifyMember = async (discord_username, ign, discord_id, db) => {
 
 const verify_interaction = async (interaction, db, opts) => {
     const discord_username = interaction.user.username;
-    let ign;
+    let ign, ephemeral;
     if (opts) {
         ign = opts.ign;
+        ephemeral = true;
     } else {
         ign = interaction.options.getString('ign');
+        ephemeral = false;
     }
     const discord_id = interaction.user.id;
 
@@ -225,14 +227,14 @@ const verify_interaction = async (interaction, db, opts) => {
                 console.log(`    Bot hoist is lower than member hoist, skipping nickname change`);
             }
             if (opts) {
-                await interaction.reply({ content: `Successfully verified \`${discord_username}\` with IGN \`${ign}\``, ephemeral: true });
+                await interaction.reply({ content: `Successfully verified \`${discord_username}\` with IGN \`${ign}\``, ephemeral: ephemeral });
             } else {
-                await interaction.reply({ content: `Successfully verified \`${discord_username}\` with IGN \`${ign}\``});
+                await interaction.reply({ content: `Successfully verified \`${discord_username}\` with IGN \`${ign}\``, ephemeral: ephemeral });
             }
         }
         else {
             console.log(`    Failed to verify ${discord_username} to ${ign} for reason: \n${verified}`)
-            await interaction.reply({ content: `Failed to verify \`${discord_username}\` to \`${ign}\` for reason: \n${verified.trim()}`, ephemeral: true });
+            await interaction.reply({ content: `Failed to verify \`${discord_username}\` to \`${ign}\` for reason: \n${verified.trim()}`, ephemeral: ephemeral });
         }
     }
     catch (error) {

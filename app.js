@@ -162,6 +162,24 @@ client.on('messageCreate', async message => {
     // Ignore messages from bots
     if (message.author.bot) return;
 
+    const roleId = '886038506659545121';
+    const channelId = '973254960479350794';
+
+    // flawless gem 
+    if (message.content === '?flawlessgem' && message.channel.id === channelId) {
+        try {
+            const member = await message.guild.members.fetch(message.author.id);
+            if (member.roles.cache.has(roleId)) {
+                message.channel.send('<@&879024853208924210>');
+            } else {
+                message.channel.send('You do not have the required role to use this command.');
+            }
+        } catch (error) {
+            console.error('Error fetching member:', error);
+            message.channel.send('An error occurred while checking your roles.');
+        }
+    }
+
     // Message logging in RDS
     // try {
     //     // Add messages in #general to normal_messages

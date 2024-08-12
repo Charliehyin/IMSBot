@@ -368,7 +368,7 @@ If you miss the invite - be patient, you will be reinvited. DO NOT MAKE A TICKET
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('guild_invited')
-                    .setLabel('Invited')
+                    .setLabel('Close Application')
                     .setStyle(ButtonStyle.Success),
                 new ButtonBuilder()
                     .setCustomId('guild_ask_to_leave')

@@ -492,7 +492,6 @@ const handle_guild_invited = async (interaction, db, client) => {
 
         // get the application channel from db
         const { ign, userid, guildName } = get_waitlist_message_content(interaction);
-        const member = await interaction.guild.members.fetch(userid);
 
         let sql = `SELECT application_channel FROM applications WHERE ign = LOWER(?) AND guild = ? AND application_status = 'accepted'`;
         let [rows] = await db.query(sql, [ign.toLowerCase(), guildName]);

@@ -32,6 +32,14 @@ const punishments_command = new SlashCommandBuilder()
                     .setRequired(true)))
     .addSubcommand(subcommand =>
         subcommand
+            .setName('view_by_id')
+            .setDescription('view all punishments for a user based on user id')
+            .addStringOption(option =>
+                option.setName('user_id')
+                    .setDescription('id of punished user')
+                    .setRequired(true)))
+    .addSubcommand(subcommand =>
+        subcommand
             .setName('remove')
             .setDescription('remove a punishment')
             .addStringOption(option =>
@@ -95,18 +103,27 @@ const punishments_interaction = async (interaction, db) => {
                 autoArchiveDuration: 1440
             });
         }
-        else if (subcommand === 'view') {
+        else if (subcommand === 'view' || subcommand === 'view_by_id') {
             console.log('Viewing punishments')
-            const user = interaction.options.getMentionable('user');
-            const username = user.user.username;
+            let discord_id = '';
+            let username = '';
+            if (subcommand === 'view') {
+                const user = interaction.options.getMentionable('user');
+                username = user.user.username;
+                discord_id = user.id;
+            }
+            else if (subcommand === 'view_by_id') {
+                discord_id = interaction.options.getString('user_id');
+                username = discord_id;
+            }
 
-            console.log(`    User: ${user}`)
+            console.log(`    User: ${username}`)
 
             const sql = `SELECT * FROM punishments WHERE discord_id = ? ORDER BY time_stamp DESC`;
-            const [rows] = await db.query(sql, [user.id]);
+            const [rows] = await db.query(sql, [discord_id]);
         
             if (rows.length === 0) {
-                await interaction.reply(`No punishments found for ${user}`);
+                await interaction.reply(`No punishments found for ${username}`);
                 return;
             }
         

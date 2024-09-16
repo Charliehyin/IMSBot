@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const itemsPerPage = 20;
+const itemsPerPage = 8;
 
 const punishments_command = new SlashCommandBuilder()
     .setName('punishments')

@@ -18,8 +18,23 @@ const divine_role = '1257208387914039388';
 
 const verified_role = '846533428647297056';
 const lfp_plus_role = '1226010575734181988';
+const lfp_plus_access_role = '973265209621905408';
+const lfp_access_role = '886724225396772944';
+const bridge_access_role = '1027639628083232878';
+
 const cheater_role = '899339197356339301';
 const muted_role = '846546346869260338';
+const restricted_role = '856172416070189097';
+const ticket_restricted_role = '1164233503760728125';
+const flex_restricted_role = '959624558103633921';
+const qna_restricted_role = '1225555376091697252';
+const suggestion_restricted_role = '951359155917193246';
+const hos_restricted_role = '951865546998177834';
+const vc_restricted_role = '1147565266801283214';
+const lfp_restricted_role = '886724571749834753';
+const lfp_plus_restricted_role = '1227956171411820605';
+const bridge_restricted_role = '891402639055654912';
+const xp_restricted_role = '1281754617428049951';
 
 const automod_channel = '1256290890432122921';
 const general_channel = '846532502125936651';
@@ -56,9 +71,23 @@ module.exports = {
     god_role, 
     divine_role, 
     verified_role, 
-    lfp_plus_role, 
+    lfp_plus_role,
+    lfp_plus_access_role,
+    lfp_access_role,
+    bridge_access_role,
     cheater_role, 
     muted_role,
+    restricted_role,
+    ticket_restricted_role,
+    flex_restricted_role,
+    qna_restricted_role,
+    suggestion_restricted_role,
+    hos_restricted_role,
+    vc_restricted_role,
+    lfp_restricted_role,
+    lfp_plus_restricted_role,
+    bridge_restricted_role,
+    xp_restricted_role,
     automod_channel, 
     general_channel, 
     punishment_log_channel,

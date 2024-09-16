@@ -47,9 +47,11 @@ const punishments_command = new SlashCommandBuilder()
                     .setDescription('id of punishment to remove')
                     .setRequired(true)));
 
-const punishments_interaction = async (interaction, db) => {
+const punishments_interaction = async (interaction, db, subcommand) => {
     try {
-        const subcommand = interaction.options.getSubcommand();
+        if (subcommand === null) {
+            subcommand = interaction.options.getSubcommand();
+        }
 
         if (subcommand === 'add') {
             console.log('Adding a punishment')
@@ -83,7 +85,7 @@ const punishments_interaction = async (interaction, db) => {
                     { name: "Reason", value: reason, inline: true }
                 );
 
-            interaction.reply({embeds: [embed]});
+            await interaction.reply({embeds: [embed]});
 
             // Get message link of the embed reply, and add it to db
             const message = await interaction.fetchReply();
@@ -102,6 +104,7 @@ const punishments_interaction = async (interaction, db) => {
                 name: 'Proof',
                 autoArchiveDuration: 1440
             });
+            console.log('Thread created successfully:', thread.id);
         }
         else if (subcommand === 'view' || subcommand === 'view_by_id') {
             console.log('Viewing punishments')

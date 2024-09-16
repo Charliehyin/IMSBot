@@ -8,6 +8,7 @@ USE imsbot;
 -- DROP TABLE IF EXISTS blacklist;
 -- DROP TABLE IF EXISTS punishments;
 -- DROP TABLE IF EXISTS applications;
+-- DROP TABLE IF EXISTS mutes;
 
 CREATE TABLE members
 (
@@ -66,6 +67,15 @@ CREATE TABLE applications
     application_status varchar(32) not null,
     application_channel varchar(32) not null,
     PRIMARY KEY (id)
+);
+
+CREATE TABLE mutes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id VARCHAR(20) NOT NULL,
+    guild_id VARCHAR(20) NOT NULL,
+    end_time BIGINT NOT NULL,
+    reason TEXT,
+    INDEX (end_time)
 );
 
 -- Create users

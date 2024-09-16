@@ -19,9 +19,11 @@ const divine_role = '1257208387914039388';
 const verified_role = '846533428647297056';
 const lfp_plus_role = '1226010575734181988';
 const cheater_role = '899339197356339301';
+const muted_role = '846546346869260338';
 
 const automod_channel = '1256290890432122921';
 const general_channel = '846532502125936651';
+const punishment_log_channel = '880457456952676352';
 
 const IMA_req = 150;
 const IMC_req = 250;
@@ -56,8 +58,10 @@ module.exports = {
     verified_role, 
     lfp_plus_role, 
     cheater_role, 
+    muted_role,
     automod_channel, 
     general_channel, 
+    punishment_log_channel,
     IMA_req, 
     IMC_req, 
     IMS_req, 

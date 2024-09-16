@@ -31,7 +31,7 @@ const {
     handle_guild_notify_invited
 } = require('./src/bot/commands/guild_apply');
 const { skycrypt_command, skycrypt_interaction } = require('./src/bot/commands/skycrypt');
-
+const { mute_command, mute_interaction, checkExpiredMutes } = require('./src/bot/commands/mute');
 // Create a new client instance
 const client = new Client({ 
     intents: [
@@ -54,6 +54,10 @@ const db = mysql.createPool({
 client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
     botStatus.isRunning = true; // Set bot status to running
+    await checkExpiredMutes(client, db);
+    setInterval(async () => {
+        await checkExpiredMutes(client, db);
+    }, 15000); // Check every 15 seconds
     await registerSlashCommands();
 });
 
@@ -68,7 +72,8 @@ async function registerSlashCommands() {
         setup_apply_command,
         setup_verify_command,
         help_verify_command,
-        skycrypt_command
+        skycrypt_command,
+        mute_command
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -103,7 +108,7 @@ client.on('interactionCreate', async interaction => {
                 await get_uuid_interaction(interaction, db);
                 break;
             case 'punishments':
-                await punishments_interaction(interaction, db);
+                await punishments_interaction(interaction, db, null);
                 break;
             case 'setup_apply':
                 await setup_apply_interaction(interaction);
@@ -116,6 +121,9 @@ client.on('interactionCreate', async interaction => {
                 break;
             case 'skycrypt':
                 await skycrypt_interaction(interaction, db);
+                break;
+            case 'mute':
+                await mute_interaction(interaction, db);
                 break;
         }
     } 

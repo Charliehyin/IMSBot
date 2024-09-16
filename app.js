@@ -30,6 +30,7 @@ const {
     handle_guild_ask_to_leave,
     handle_guild_notify_invited
 } = require('./src/bot/commands/guild_apply');
+const { skycrypt_command, skycrypt_interaction } = require('./src/bot/commands/skycrypt');
 
 // Create a new client instance
 const client = new Client({ 
@@ -66,7 +67,8 @@ async function registerSlashCommands() {
         punishments_command,
         setup_apply_command,
         setup_verify_command,
-        help_verify_command
+        help_verify_command,
+        skycrypt_command
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -111,6 +113,9 @@ client.on('interactionCreate', async interaction => {
                 break;
             case 'help_verify':
                 await help_verify_interaction(interaction);
+                break;
+            case 'skycrypt':
+                await skycrypt_interaction(interaction, db);
                 break;
         }
     } 

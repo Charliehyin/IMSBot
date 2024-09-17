@@ -17,7 +17,11 @@ const mute_command = new SlashCommandBuilder()
     .addStringOption(option =>
         option.setName('reason')
             .setDescription('Reason for muting')
-            .setRequired(true));
+            .setRequired(true))
+    .addBooleanOption(option =>
+        option.setName('silent')
+            .setDescription('Do not log this mute')
+            .setRequired(false));
 
 const restrict_command = new SlashCommandBuilder()
     .setName('restrict')
@@ -51,13 +55,18 @@ const restrict_command = new SlashCommandBuilder()
     .addStringOption(option =>
         option.setName('reason')
             .setDescription('Reason for restricting')
-            .setRequired(true));
+            .setRequired(true))
+    .addBooleanOption(option =>
+        option.setName('silent')
+            .setDescription('Do not log this restriction')
+            .setRequired(false));
 
 const punish_interaction = async (interaction, db, punishment_type) => {
     const user = interaction.options.getUser('user');
     const duration = interaction.options.getString('duration');
     const reason = interaction.options.getString('reason');
     let role;
+    let silent = interaction.options.getBoolean('silent') ?? false;
 
     if (punishment_type === 'mute') {
         role = muted_role;
@@ -149,50 +158,52 @@ const punish_interaction = async (interaction, db, punishment_type) => {
             await member.roles.remove(bridge_access_role)
         }
 
-        // Create a separate channel object for the punishment log
-        const punishmentLogChannel = await interaction.guild.channels.fetch(punishment_log_channel);
+        if (!silent) {
+            // Create a separate channel object for the punishment log
+            const punishmentLogChannel = await interaction.guild.channels.fetch(punishment_log_channel);
 
-        // Modify the fakeInteraction to use the punishment log channel
-        const fakeInteraction = {
-            options: {
-                getMentionable: () => ({ id: user.id }),
-                getSubcommand: () => 'add',
-                getString: (name) => {
-                    if (name === 'punishment') {
-                        if (punishment_type === 'mute') {
-                            return `${duration} mute`;
+            // Modify the fakeInteraction to use the punishment log channel
+            const fakeInteraction = {
+                options: {
+                    getMentionable: () => ({ id: user.id }),
+                    getSubcommand: () => 'add',
+                    getString: (name) => {
+                        if (name === 'punishment') {
+                            if (punishment_type === 'mute') {
+                                return `${duration} mute`;
+                            }
+                            else if (punishment_type === 'restrict') {
+                                return `${duration} restriction`;
+                            }
+                            else {
+                                return `${duration} ${punishment_type} restricted`;
+                            }
                         }
-                        else if (punishment_type === 'restrict') {
-                            return `${duration} restriction`;
+                        else if (name === 'reason') {
+                            return reason;
                         }
                         else {
-                            return `${duration} ${punishment_type} restricted`;
+                            return null;
                         }
                     }
-                    else if (name === 'reason') {
-                        return reason;
-                    }
-                    else {
-                        return null;
-                    }
-                }
-            },
-            reply: async (content) => {
-                // Send the reply to the punishment log channel instead
-                await punishmentLogChannel.send(content);
-            },
-            fetchReply: async () => {
-                // Return the last message in the punishment log channel
-                const messages = await punishmentLogChannel.messages.fetch({ limit: 1 });
-                return messages.first();
-            },
-            guildId: interaction.guildId,
-            channelId: punishment_log_channel,
-            createdTimestamp: interaction.createdTimestamp
-        };
+                },
+                reply: async (content) => {
+                    // Send the reply to the punishment log channel instead
+                    await punishmentLogChannel.send(content);
+                },
+                fetchReply: async () => {
+                    // Return the last message in the punishment log channel
+                    const messages = await punishmentLogChannel.messages.fetch({ limit: 1 });
+                    return messages.first();
+                },
+                guildId: interaction.guildId,
+                channelId: punishment_log_channel,
+                createdTimestamp: interaction.createdTimestamp
+            };
 
-        // Log the punishment using the modified fakeInteraction
-        await punishments_interaction(fakeInteraction, db, 'add');
+            // Log the punishment using the modified fakeInteraction
+            await punishments_interaction(fakeInteraction, db, 'add');
+        }
 
         // Reply to the original interaction in the channel where the command was run
         if (punishment_type === 'mute') {

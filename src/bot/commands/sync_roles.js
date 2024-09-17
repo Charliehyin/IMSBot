@@ -33,7 +33,7 @@ const sync_guild_info = async (interaction, uuid) => {
     if (guild_id === ims_guild_id) {
         console.log(`    ${uuid} is in IMS guild`);
 
-        await interaction.member.roles.add(ims_guild_role);
+        interaction.member.roles.add(ims_guild_role);
         console.log('    IMS role added');
         roles.push(ims_guild_role);
 
@@ -43,7 +43,7 @@ const sync_guild_info = async (interaction, uuid) => {
     if (guild_id === imc_guild_id) {
         console.log(`    ${uuid} is in IMC guild`);
 
-        await interaction.member.roles.add(imc_guild_role);
+        interaction.member.roles.add(imc_guild_role);
         console.log('    IMC role added');
         roles.push(imc_guild_role);
 
@@ -53,7 +53,7 @@ const sync_guild_info = async (interaction, uuid) => {
     if (guild_id === ima_guild_id) {
         console.log(`    ${uuid} is in IMA guild`);
 
-        await interaction.member.roles.add(ima_guild_role);
+        interaction.member.roles.add(ima_guild_role);
         console.log('    IMA role added');
         roles.push(ima_guild_role);
 
@@ -87,7 +87,7 @@ const sync_roles_interaction = async (interaction, db) => {
         await interaction.member.roles.remove([king_role, god_role, divine_role, ims_guild_role, imc_guild_role, ima_guild_role, lfp_plus_role]);
         console.log('    Old roles removed');
 
-        await interaction.member.roles.add(verified_role);
+        interaction.member.roles.add(verified_role);
 
         let roles = await sync_guild_info(interaction, uuid);
         console.log('    Guild roles synced')
@@ -96,11 +96,11 @@ const sync_roles_interaction = async (interaction, db) => {
         const ironman = await check_ironman_hotm3(uuid);
 
         if (ironman) {
-            await interaction.member.roles.add(lfp_plus_role);
+            interaction.member.roles.add(lfp_plus_role);
             console.log('    lfp plus role added');
             roles.push(lfp_plus_role);
         }
-        
+
         console.log('    Done syncing roles');
         await interaction.reply('Roles synced: ' + roles.map((role) => '<@&' + role + '>').join(', '));
 

@@ -58,10 +58,10 @@ client.once('ready', async () => {
     checkExpiredPunishments(client, db);
     autosync_roles_all_guilds(client, db);
     setInterval(async () => {
-        await checkExpiredPunishments(client, db);
+        checkExpiredPunishments(client, db);
     }, 15000); // Check every 15 seconds
     setInterval(async () => {
-        await autosync_roles_all_guilds(client, db);
+        autosync_roles_all_guilds(client, db);
     }, 3 * 60 * 60 * 1000); // Check every 3 hours
     await registerSlashCommands();
 });

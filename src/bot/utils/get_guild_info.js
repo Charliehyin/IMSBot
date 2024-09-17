@@ -3,7 +3,7 @@ require('dotenv').config();
 const get_guild_info = async (uuid) => {
     const fetch = (await import('node-fetch')).default;
     const key = process.env.HYPIXEL_API_KEY;
-    const url = `https://api.hypixel.net/guild?key=${key}&player=${uuid}`;
+    const url = `https://api.hypixel.net/v2/guild?key=${key}&player=${uuid}`;
 
     try {
         const resp = await fetch(url, {

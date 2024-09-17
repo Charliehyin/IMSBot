@@ -20,7 +20,7 @@ const process_moderationapi_message = async (message, model_url, channel, client
         let { results } = await data.json();
         const flagged = results[0].flagged;
         const categories = results[0].categories;
-        console.log(`${flagged}: ${message.content}`)
+        // console.log(`${flagged}: ${message.content}`)
         if (flagged) {
             const fields = Object.keys(categories).filter(key => categories[key]);
 

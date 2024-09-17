@@ -1,5 +1,7 @@
 const embedColor = '#FFC3FF';
 
+const guild_id = '846530301513695272';
+
 const ims_guild_id = '63ebb4338ea8c9ed87b98d4a';
 const imc_guild_id = '60ac425a8ea8c9bb7f6da827';
 const ima_guild_id = '633b10688ea8c9eeda70db6b';
@@ -58,6 +60,7 @@ const IMA_application_category = '1026652567498928239';
 
 module.exports = { 
     embedColor, 
+    guild_id,
     ims_guild_id, 
     imc_guild_id, 
     ima_guild_id, 

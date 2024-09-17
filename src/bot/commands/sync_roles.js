@@ -71,6 +71,7 @@ const sync_roles_interaction = async (interaction, db) => {
     // Sync guild info
     try {
         const discord_id = interaction.member.id;
+        console.log(`    discord_id: ${discord_id}`)
         
         // Get uuid from database
         let sql = `SELECT uuid FROM members WHERE discord_id = ?`;

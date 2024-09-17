@@ -32,6 +32,7 @@ const {
 } = require('./src/bot/commands/guild_apply');
 const { skycrypt_command, skycrypt_interaction } = require('./src/bot/commands/skycrypt');
 const { mute_command, restrict_command, punish_interaction, checkExpiredPunishments } = require('./src/bot/commands/mute_restrict');
+const { autosync_roles_all_guilds } = require('./src/bot/commands/autosync_roles');
 // Create a new client instance
 const client = new Client({ 
     intents: [
@@ -54,10 +55,14 @@ const db = mysql.createPool({
 client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
     botStatus.isRunning = true; // Set bot status to running
-    await checkExpiredPunishments(client, db);
+    checkExpiredPunishments(client, db);
+    autosync_roles_all_guilds(client, db);
     setInterval(async () => {
         await checkExpiredPunishments(client, db);
     }, 15000); // Check every 15 seconds
+    setInterval(async () => {
+        await autosync_roles_all_guilds(client, db);
+    }, 3 * 60 * 60 * 1000); // Check every 3 hours
     await registerSlashCommands();
 });
 

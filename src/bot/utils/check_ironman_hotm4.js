@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const check_ironman_hotm3 = async (uuid) => {
+const check_ironman_hotm4 = async (uuid) => {
     const fetch = (await import('node-fetch')).default;
     const key = process.env.HYPIXEL_API_KEY;
     const url = `https://api.hypixel.net/v2/skyblock/profiles?key=${key}&uuid=${uuid}`;
@@ -29,8 +29,8 @@ const check_ironman_hotm3 = async (uuid) => {
                     continue;
                 }
                 console.log(`    Hotm xp: ${profile.members[uuid].mining_core.experience}`);
-                if (profile.members[uuid].mining_core.experience >= 12000) {
-                    console.log(`    ${uuid} has Ironman HOTM3`);
+                if (profile.members[uuid].mining_core.experience >= 37000) {
+                    console.log(`    ${uuid} has Ironman HOTM4`);
                     return true;
                 }
             }
@@ -44,4 +44,4 @@ const check_ironman_hotm3 = async (uuid) => {
     }
 }
 
-module.exports = { check_ironman_hotm3 }
+module.exports = { check_ironman_hotm4 }

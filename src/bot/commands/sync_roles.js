@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { SlashCommandBuilder } = require('discord.js');
 const { get_guild_info } = require('../utils/get_guild_info');
-const { check_ironman_hotm3 } = require('../utils/check_ironman_hotm3');
+const { check_ironman_hotm4 } = require('../utils/check_ironman_hotm4');
 const { ims_guild_id, imc_guild_id, ima_guild_id, ims_guild_role, imc_guild_role, ima_guild_role, king_role, god_role, divine_role, lfp_plus_role, verified_role } = require('../constants');
 
 const add_rank_role = async (interaction, rank, roles) => {
@@ -92,8 +92,8 @@ const sync_roles_interaction = async (interaction, db) => {
         let roles = await sync_guild_info(interaction, uuid);
         console.log('    Guild roles synced')
 
-        // Check if user is ironman in HOTM3
-        const ironman = await check_ironman_hotm3(uuid);
+        // Check if user is ironman in HOTM4
+        const ironman = await check_ironman_hotm4(uuid);
 
         if (ironman) {
             interaction.member.roles.add(lfp_plus_role);

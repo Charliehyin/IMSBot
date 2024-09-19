@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { check_ironman_hotm3 } = require('./utils/check_ironman_hotm3');
+const { check_ironman_hotm4 } = require('./utils/check_ironman_hotm4');
 const { get_guild_info } = require('./utils/get_guild_info');
 
 const testFunc = async () => {
@@ -8,8 +8,8 @@ const testFunc = async () => {
     console.log('    Guild ID:', guild_id);
     console.log('    Rank:', rank);
 
-    const isIronman = await check_ironman_hotm3(uuid);
-    console.log('    Hotm3:', isIronman);
+    const isIronman = await check_ironman_hotm4(uuid);
+    console.log('    Hotm4:', isIronman);
 }
 
 testFunc();

@@ -92,7 +92,7 @@ async function autosync_roles_all_guilds(client, db) {
         for (let member of all_members) {
             await autosync_roles(client, member, guild, db);
             // wait 5 seconds between each member
-            await new Promise(resolve => setTimeout(resolve, 5000));
+            await new Promise(resolve => setTimeout(resolve, 10000));
         }
     }
     catch (error) {

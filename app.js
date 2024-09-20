@@ -56,7 +56,7 @@ client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
     botStatus.isRunning = true; // Set bot status to running
     checkExpiredPunishments(client, db);
-    autosync_roles_all_guilds(client, db);
+    // autosync_roles_all_guilds(client, db);
     setInterval(async () => {
         checkExpiredPunishments(client, db);
     }, 15000); // Check every 15 seconds

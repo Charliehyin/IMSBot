@@ -62,7 +62,9 @@ const sync_roles_command = new SlashCommandBuilder()
 
 const sync_roles_interaction = async (interaction, db) => {
     console.log('Syncing roles')
-    interaction.deferReply();
+    if (interaction.isCommand()) {
+        interaction.deferReply();
+    }
     // Sync guild info
     try {
         const discord_id = interaction.member.id;
@@ -120,7 +122,7 @@ const sync_roles_interaction = async (interaction, db) => {
         ]);
 
         let reply = '';
-        
+
         // Fetch the user's IGN using Mojang API
         try {
             const fetch = (await import('node-fetch')).default;
@@ -156,11 +158,19 @@ const sync_roles_interaction = async (interaction, db) => {
         }
 
         console.log('    Done syncing roles');
-        await interaction.editReply(reply);
+        if (interaction.isCommand()) {
+            await interaction.editReply(reply);
+        } else {
+            await interaction.reply(reply);
+        }
 
     } catch (error) {
         console.error('Error syncing guild info:', error);
-        await interaction.editReply(`There was an error while trying to sync your roles: ${error.message}`);
+        if (interaction.isCommand()) {
+            await interaction.editReply(`There was an error while trying to sync your roles: ${error.message}`);
+        } else {
+            await interaction.reply(`There was an error while trying to sync your roles: ${error.message}`);
+        }
     }
 }
 

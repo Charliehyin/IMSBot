@@ -66,6 +66,7 @@ async function autosync_roles(client, member, guild, db) {
             reply: async (content) => {
                 console.log(content);
             },
+            isCommand: () => false,
             guild: guild,
             guildId: guild_id,
             channelId: 846643902533337108,

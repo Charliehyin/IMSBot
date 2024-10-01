@@ -152,8 +152,13 @@ const rank_guild_command = new SlashCommandBuilder()
     .setDescription('Rank the statistics of a guild')
     .addStringOption(option =>
         option.setName('guild')
-            .setDescription('name or uuid of the guild')
-            .setRequired(true))
+            .setDescription('name of the guild')
+            .setRequired(true)
+            .addChoices(
+                { name: 'Ironman Sweats', value: 'ims' },
+                { name: 'Ironman Casuals', value: 'imc' },
+                { name: 'Ironman Academy', value: 'ima' },
+            ))
     .addStringOption(option =>
         option.setName('statistic')
             .setDescription('statistic to rank by')
@@ -168,7 +173,6 @@ const rank_guild_command = new SlashCommandBuilder()
     .addStringOption(option =>
         option.setName('order')
             .setDescription('order to sort by')
-            .setRequired(true)
             .addChoices(
                 { name: 'Ascending', value: 'ascending' },
                 { name: 'Descending', value: 'descending' },
@@ -223,11 +227,114 @@ const rank_guild_interaction = async (interaction, db) => {
                 // TODO
                 interaction.reply('Not implemented yet');
             } else if (statistic === 'daily_gxp') {
-                // TODO
-                interaction.reply('Not implemented yet');
+                const response = await fetch(`https://api.hypixel.net/guild?key=${API_KEY}&id=${guild_id}`);
+                const guildData = await response.json();
+                const members = guildData.guild.members;
+                let member_data = [];
+            
+                for (const member of members) {
+                    try {
+                        let weekly_gxp = member.expHistory;
+                        const mostRecentDay = Object.keys(weekly_gxp)[0];
+                        const dailyGxp = weekly_gxp[mostRecentDay];
+
+                        // Add member data to the array
+                        member_data.push({
+                            uuid: member.uuid,
+                            gxp: dailyGxp
+                        });
+                    }
+                    catch (error) {
+                        console.error(`Error fetching data for player ${member.uuid}:`, error);
+                    }
+                }
+                // Query the database to get usernames for verified users
+                const uuidList = member_data.map(member => member.uuid);
+                const [verifiedUsers] = await db.query(
+                    'SELECT uuid, ign FROM members WHERE uuid IN (?)',
+                    [uuidList]
+                );
+
+                // Create a map of UUID to username
+                const uuidToUsername = new Map(verifiedUsers.map(user => [user.uuid, user.ign]));
+
+                // Update member_data with usernames
+                member_data = member_data.map(member => ({
+                    ...member,
+                    username: uuidToUsername.get(member.uuid) || member.uuid
+                }));
+
+                // Sort members by daily GXP in descending order
+                member_data.sort((a, b) => b.gxp - a.gxp);
+
+                const order = interaction.options.getString('order');
+                if (order === 'ascending') {
+                    member_data.reverse();
+                }
+
+                // Create an array of text for each member, displaying username and daily GXP
+                const memberTexts = member_data.map((member, index) => {
+                    return `${index + 1}. \`${member.username}\` - ${member.gxp.toLocaleString()} GXP\n`;
+                });
+
+                await create_embed(interaction, 'Daily Guild XP Ranking', `Ranking of ${guildData.guild.name} members by Daily Guild XP\n`, memberTexts);
+
             } else if (statistic === 'weekly_gxp') {
-                // TODO
-                interaction.reply('Not implemented yet');
+                const response = await fetch(`https://api.hypixel.net/guild?key=${API_KEY}&id=${guild_id}`);
+                const guildData = await response.json();
+                const members = guildData.guild.members;
+                let member_data = [];
+            
+                for (const member of members) {
+                    try {
+                        let weekly_gxp = member.expHistory;
+                        const days = Object.keys(weekly_gxp);
+                        let total_gxp = 0;
+                        for (const day of days) {
+                            total_gxp += weekly_gxp[day];
+                        }
+
+                        // Add member data to the array
+                        member_data.push({
+                            uuid: member.uuid,
+                            gxp: total_gxp
+                        });
+                    }
+                    catch (error) {
+                        console.error(`Error fetching data for player ${member.uuid}:`, error);
+                    }
+                }
+                // Query the database to get usernames for verified users
+                const uuidList = member_data.map(member => member.uuid);
+                const [verifiedUsers] = await db.query(
+                    'SELECT uuid, ign FROM members WHERE uuid IN (?)',
+                    [uuidList]
+                );
+
+                // Create a map of UUID to username
+                const uuidToUsername = new Map(verifiedUsers.map(user => [user.uuid, user.ign]));
+
+                // Update member_data with usernames
+                member_data = member_data.map(member => ({
+                    ...member,
+                    username: uuidToUsername.get(member.uuid) || member.uuid
+                }));
+
+                // Sort members by daily GXP in descending order
+                member_data.sort((a, b) => b.gxp - a.gxp);
+
+                const order = interaction.options.getString('order');
+                if (order === 'ascending') {
+                    member_data.reverse();
+                }
+
+                // Create an array of text for each member, displaying username and weekly GXP
+                const memberTexts = member_data.map((member, index) => {
+                    return `${index + 1}. \`${member.username}\` - ${member.gxp.toLocaleString()} GXP\n`;
+                });
+
+                await create_embed(interaction, 'Weekly Guild XP Ranking', `Ranking of ${guildData.guild.name} members by Weekly Guild XP\n`, memberTexts);
+
             } else if (statistic === 'level') {
                 // Fetch the latest skyblock levels for the guild from the database
                 let [rows] = await db.query('SELECT time_stamp FROM guild_member_data WHERE guild_id = ? ORDER BY time_stamp DESC LIMIT 1', [guild_id]);

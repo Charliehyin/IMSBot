@@ -169,6 +169,7 @@ const rank_guild_command = new SlashCommandBuilder()
                 { name: 'Daily Guild XP', value: 'daily_gxp' },
                 { name: 'Weekly Guild XP', value: 'weekly_gxp' },
                 { name: 'Skyblock Level', value: 'level' },
+                { name: 'Lily Weight', value: 'lily_weight' },
             ))
     .addStringOption(option =>
         option.setName('order')
@@ -463,6 +464,39 @@ const rank_guild_interaction = async (interaction, db) => {
                 });
 
                 await create_embed(interaction, 'Skyblock Level Ranking', `Ranking of ${guild} members by Skyblock Level\nUpdated <t:${parseInt(latestTimestamp/1000)}:R>\n`, memberTexts);
+            } else if (statistic === 'lily_weight') {
+                // Fetch the latest lily weights for the guild from the database
+                let [rows] = await db.query('SELECT time_stamp FROM guild_member_data WHERE guild_id = ? ORDER BY time_stamp DESC LIMIT 1', [guild_id]);
+                const latestTimestamp = rows[0].time_stamp;
+
+                console.log(`    Latest timestamp: ${latestTimestamp}`);
+                console.log(`    Guild ID: ${guild_id}`);
+
+                [rows] = await db.query(
+                    'SELECT username, lily_weight FROM guild_member_data WHERE time_stamp = ? AND guild_id = ?',
+                    [latestTimestamp, guild_id]
+                );
+
+                if (rows.length === 0) {
+                    await interaction.reply(`No data found for the guild with ID: ${guild_id}`);
+                    return;
+                }
+
+                // Sort members by lily weight in descending order
+                const sortedMembers = rows
+                    .map((row, index) => ({ username: row.username, weight: row.lily_weight }))
+                    .sort((a, b) => b.weight - a.weight);
+
+                const order = interaction.options.getString('order');
+                if (order === 'ascending') {
+                    sortedMembers.reverse();
+                }
+                // Create an array of text for each member, displaying username and weight
+                const memberTexts = sortedMembers.map((member, index) => {
+                    return `${index + 1}. \`${member.username}\` - ${member.weight.toLocaleString()}\n`;
+                });
+
+                await create_embed(interaction, 'Lily Weight Ranking', `Ranking of ${guild} members by Lily Weight\nUpdated <t:${parseInt(latestTimestamp/1000)}:R>\n`, memberTexts);
             } else {
                 await interaction.reply(`Invalid statistic: ${statistic}`);
                 return;

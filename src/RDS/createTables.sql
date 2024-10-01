@@ -8,7 +8,8 @@ USE imsbot;
 -- DROP TABLE IF EXISTS blacklist;
 -- DROP TABLE IF EXISTS punishments;
 -- DROP TABLE IF EXISTS applications;
--- DROP TABLE IF EXISTS mutes;
+-- DROP TABLE IF EXISTS current_punishments;
+-- DROP TABLE IF EXISTS guild_member_data;
 
 CREATE TABLE members
 (
@@ -71,12 +72,23 @@ CREATE TABLE applications
 
 CREATE TABLE current_punishments (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id VARCHAR(20) NOT NULL,
-    guild_id VARCHAR(20) NOT NULL,
+    user_id VARCHAR(32) NOT NULL,
+    guild_id VARCHAR(32) NOT NULL,
     end_time BIGINT NOT NULL,
     reason TEXT,
-    punishment_type VARCHAR(20) NOT NULL,
+    punishment_type VARCHAR(32) NOT NULL,
     INDEX (end_time)
+);
+
+CREATE TABLE guild_member_data (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    guild_id VARCHAR(32) NOT NULL,
+    username VARCHAR(32) NOT NULL,
+    user_id VARCHAR(32) NOT NULL,
+    time_stamp BIGINT NOT NULL,
+    lily_weight INT NOT NULL,
+    skyblock_xp INT NOT NULL,
+    INDEX (time_stamp)
 );
 
 -- Create users

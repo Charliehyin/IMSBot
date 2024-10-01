@@ -1,0 +1,279 @@
+require('dotenv').config();
+const { SlashCommandBuilder } = require('discord.js');
+const { embedColor, ims_guild_id, imc_guild_id, ima_guild_id } = require('../constants');
+const API_KEY = process.env.HYPIXEL_API_KEY;
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
+const members_per_page = 25;
+
+const fetch_specific_guild_data = async (client, db, guild_id) => {
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch(`https://api.hypixel.net/guild?key=${API_KEY}&id=${guild_id}`);
+    const guildData = await response.json();
+    const members = guildData.guild.members;
+    let players = [];
+
+    for (const member of members) {
+        try {
+            // Fetch Lily weight for the player
+            const playerResponse = await fetch(`https://sky.shiiyu.moe/api/v2/profile/${member.uuid}`);
+            const playerData = await playerResponse.json();
+            
+            // Fetch player's IGN from UUID
+            const playerNameResponse = await fetch(`https://api.mojang.com/user/profile/${member.uuid}`);
+            const playerNameData = await playerNameResponse.json();
+            const playerName = playerNameData.name;
+            
+            console.log(`    Player: ${playerName}`);
+
+            let lilyWeight = 0;
+            let skyblockXP = 0;
+            if (playerData.profiles) {
+                const profileKeys = Object.keys(playerData.profiles);
+                for (const profileKey of profileKeys) {
+                    if (playerData.profiles[profileKey].game_mode !== 'ironman') {
+                        continue;
+                    }
+
+                    console.log(`        Profile: ${profileKey}`);
+                    console.log(`        Weight: ${playerData.profiles[profileKey].data.weight.lily.total}`);
+
+                    const profileWeight = playerData.profiles[profileKey].data.weight.lily.total;
+                    if (profileWeight && profileWeight > lilyWeight) {
+                        lilyWeight = profileWeight;
+                    }
+                    const profileXP = playerData.profiles[profileKey].data.skyblock_level.xp;
+                    if (profileXP && profileXP > skyblockXP) {
+                        skyblockXP = profileXP;
+                    }
+                    console.log(`        XP: ${skyblockXP}`);
+                }
+                players.push({
+                    username: playerName,
+                    uuid: member.uuid,
+                    lilyWeight: parseInt(lilyWeight),
+                    skyblockXP: parseInt(skyblockXP)
+                });
+            }
+
+        } catch (error) {
+            console.error(`Error fetching data for player ${member.uuid}:`, error);
+        }
+    }
+    // Add player data to the database
+    const currentTimestamp = Date.now();
+    const insertQuery = 'INSERT INTO guild_member_data (guild_id, user_id, username, time_stamp, lily_weight, skyblock_xp) VALUES ?';
+    const values = players.map(player => [
+        guild_id,
+        player.uuid,
+        player.username,
+        currentTimestamp,
+        player.lilyWeight,
+        player.skyblockXP
+    ]);
+
+    try {
+        await db.query(insertQuery, [values]);
+        console.log(`Successfully added ${players.length} player(s) data to the database.`);
+    } catch (error) {
+        console.error('Error inserting player data into the database:', error);
+    }
+}
+
+const fetch_guild_data = async (client, db) => {
+    const guild_ids = [ims_guild_id, imc_guild_id, ima_guild_id];
+    for (const guild_id of guild_ids) {
+        await fetch_specific_guild_data(client, db, guild_id);
+    }
+}
+
+const create_embed = async (interaction, title, description, rows) => {
+    const pages = [];
+        
+    for (let i = 0; i < rows.length; i += members_per_page) {
+        const pageRows = rows.slice(i, i + members_per_page);
+        const embed = new EmbedBuilder()
+            .setTitle(title)
+            .setColor(embedColor)
+            .setFooter({ text: `Page ${pages.length + 1}/${Math.ceil(rows.length / members_per_page)}` });
+
+        let pageDescription = description;
+        pageRows.forEach(row => {
+            pageDescription += row;
+        });
+
+        embed.setDescription(pageDescription);
+
+        pages.push(embed);
+    }
+
+    let currentPage = 0;
+
+    const row = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('previous')
+                .setLabel('Previous')
+                .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+                .setCustomId('next')
+                .setLabel('Next')
+                .setStyle(ButtonStyle.Primary)
+        );
+
+    const response = await interaction.reply({
+        embeds: [pages[currentPage]],
+        components: [row],
+        fetchReply: true
+    });
+
+    const collector = response.createMessageComponentCollector({ time: 60000 });
+
+    collector.on('collect', async i => {
+        if (i.customId === 'previous') {
+            currentPage = currentPage > 0 ? --currentPage : pages.length - 1;
+        } else if (i.customId === 'next') {
+            currentPage = currentPage + 1 < pages.length ? ++currentPage : 0;
+        }
+
+        await i.update({
+            embeds: [pages[currentPage]],
+            components: [row]
+        });
+    });
+
+    collector.on('end', () => {
+        row.components.forEach(button => button.setDisabled(true));
+        interaction.editReply({ components: [row] });
+    });
+}
+
+const rank_guild_command = new SlashCommandBuilder()
+    .setName('rank_guild')
+    .setDescription('Rank the statistics of a guild')
+    .addStringOption(option =>
+        option.setName('guild')
+            .setDescription('name or uuid of the guild')
+            .setRequired(true))
+    .addStringOption(option =>
+        option.setName('statistic')
+            .setDescription('statistic to rank by')
+            .setRequired(true)
+            .addChoices(
+                { name: 'Weekly Weight Gain', value: 'weekly_weight_gain' },
+                { name: 'Weekly Skyblock XP Gain', value: 'weekly_xp_gain' },
+                { name: 'Daily Guild XP', value: 'daily_gxp' },
+                { name: 'Weekly Guild XP', value: 'weekly_gxp' },
+                { name: 'Skyblock Level', value: 'level' },
+            ))
+    .addStringOption(option =>
+        option.setName('order')
+            .setDescription('order to sort by')
+            .setRequired(true)
+            .addChoices(
+                { name: 'Ascending', value: 'ascending' },
+                { name: 'Descending', value: 'descending' },
+            ));
+
+const rank_guild_interaction = async (interaction, db) => {
+    try {
+        console.log('Ranking guild: ');
+        let guild = interaction.options.getString('guild');
+        const statistic = interaction.options.getString('statistic');
+
+        if (guild.toLowerCase() === 'ims' || guild.toLowerCase() === 'ironman sweats') {
+            guild_id = ims_guild_id;
+            guild = 'Ironman Sweats';
+        } else if (guild.toLowerCase() === 'imc' || guild.toLowerCase() === 'ironman casuals') {
+            guild_id = imc_guild_id;
+            guild = 'Ironman Casuals';
+        } else if (guild.toLowerCase() === 'ima' || guild.toLowerCase() === 'ironman academy') {
+            guild_id = ima_guild_id;
+            guild = 'Ironman Academy';
+        } else {
+            guild_id = guild;
+        }
+
+        console.log(`    Guild: ${guild}`)
+        console.log(`    Statistic: ${statistic}`)
+
+        const fetch = (await import('node-fetch')).default;
+
+        // Fetch guild data from hypixel api
+        try {
+            const response = await fetch(`https://api.hypixel.net/guild?key=${API_KEY}&id=${guild_id}`);
+            const guildData = await response.json();
+
+            if (!guildData) {
+                await interaction.reply(`Failed to fetch guild data: ${guildData.cause}`);
+                return;
+            }
+
+            if (!guildData.guild) {
+                await interaction.reply(`No guild found with the ID or name: ${guild}`);
+                return;
+            }
+
+            console.log(`    Valid guild found: ${guildData.guild.name}`);
+            
+            // TODO
+            if (statistic === 'weekly_weight_gain') {
+                // TODO
+                interaction.reply('Not implemented yet');
+            } else if (statistic === 'weekly_xp_gain') {
+                // TODO
+                interaction.reply('Not implemented yet');
+            } else if (statistic === 'daily_gxp') {
+                // TODO
+                interaction.reply('Not implemented yet');
+            } else if (statistic === 'weekly_gxp') {
+                // TODO
+                interaction.reply('Not implemented yet');
+            } else if (statistic === 'level') {
+                // Fetch the latest skyblock levels for the guild from the database
+                let [rows] = await db.query('SELECT time_stamp FROM guild_member_data WHERE guild_id = ? ORDER BY time_stamp DESC LIMIT 1', [guild_id]);
+                const latestTimestamp = rows[0].time_stamp;
+
+                console.log(`    Latest timestamp: ${latestTimestamp}`);
+                console.log(`    Guild ID: ${guild_id}`);
+
+                [rows] = await db.query(
+                    'SELECT username, skyblock_xp FROM guild_member_data WHERE time_stamp = ? AND guild_id = ?',
+                    [latestTimestamp, guild_id]
+                );
+
+                if (rows.length === 0) {
+                    await interaction.reply(`No data found for the guild with ID: ${guild_id}`);
+                    return;
+                }
+
+                // Sort members by skyblock XP (level) in descending order
+                const sortedMembers = rows
+                    .map((row, index) => ({ username: row.username, xp: row.skyblock_xp }))
+                    .sort((a, b) => b.xp - a.xp);
+
+                const order = interaction.options.getString('order');
+                if (order === 'ascending') {
+                    sortedMembers.reverse();
+                }
+                // Create an array of text for each member, displaying username and XP
+                const memberTexts = sortedMembers.map((member, index) => {
+                    return `${index + 1}. \`${member.username}\` - ${member.xp.toLocaleString()} XP\n`;
+                });
+
+                await create_embed(interaction, 'Skyblock Level Ranking', `Ranking of ${guild} members by Skyblock Level\nUpdated <t:${parseInt(latestTimestamp/1000)}:R>\n`, memberTexts);
+            } else {
+                await interaction.reply(`Invalid statistic: ${statistic}`);
+                return;
+            }
+        } catch (error) {
+            console.error('Error checking guild validity:', error);
+            await interaction.reply(`An error occurred while validating the guild: ${error.message}`);
+        }
+
+    } catch (error) {
+        console.error(error);
+        await interaction.reply(`There was an error while trying to rank the guild: ${error.message}`);
+    }
+}
+
+module.exports = { fetch_guild_data, rank_guild_command, rank_guild_interaction };

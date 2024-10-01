@@ -33,6 +33,7 @@ const {
 const { skycrypt_command, skycrypt_interaction } = require('./src/bot/commands/skycrypt');
 const { mute_command, restrict_command, punish_interaction, checkExpiredPunishments } = require('./src/bot/commands/mute_restrict');
 const { autosync_roles_all_guilds } = require('./src/bot/commands/autosync_roles');
+const { fetch_guild_data, rank_guild_command, rank_guild_interaction } = require('./src/bot/commands/rank_guild');
 // Create a new client instance
 const client = new Client({ 
     intents: [
@@ -55,6 +56,7 @@ const db = mysql.createPool({
 client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
     botStatus.isRunning = true; // Set bot status to running
+    // fetch_guild_data(client, db);
     checkExpiredPunishments(client, db);
     // autosync_roles_all_guilds(client, db);
     setInterval(async () => {
@@ -63,6 +65,9 @@ client.once('ready', async () => {
     setInterval(async () => {
         autosync_roles_all_guilds(client, db);
     }, 3 * 60 * 60 * 1000); // Check every 3 hours
+    setInterval(async () => {
+        fetch_guild_data(client, db);
+    }, 60 * 60 * 1000); // Check every 60 minutes
     await registerSlashCommands();
 });
 
@@ -79,7 +84,8 @@ async function registerSlashCommands() {
         help_verify_command,
         skycrypt_command,
         mute_command,
-        restrict_command
+        restrict_command,
+        rank_guild_command
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -133,6 +139,9 @@ client.on('interactionCreate', async interaction => {
                 break;
             case 'restrict':
                 await punish_interaction(interaction, db);
+                break;
+            case 'rank_guild':
+                await rank_guild_interaction(interaction, db);
                 break;
         }
     } 

@@ -69,13 +69,14 @@ const sync_roles_interaction = async (interaction, db) => {
         console.log(`    discord_id: ${discord_id}`)
         
         // Get uuid from database
-        let sql = `SELECT uuid FROM members WHERE discord_id = ?`;
+        let sql = `SELECT uuid, ign FROM members WHERE discord_id = ?`;
         let [rows] = await db.query(sql, [discord_id]);
         if (rows.length === 0) {
             await interaction.reply('You are not verified');
             return;
         }
         const uuid = rows[0].uuid;
+        const ign = rows[0].ign;
 
         console.log(`    uuid: ${uuid}, discord_id: ${discord_id}`)
 
@@ -119,6 +120,29 @@ const sync_roles_interaction = async (interaction, db) => {
         ]);
 
         let reply = '';
+        
+        // Fetch the user's IGN using Mojang API
+        try {
+            const fetch = (await import('node-fetch')).default;
+            const response = await fetch(`https://api.mojang.com/user/profile/${uuid}`);
+            const data = await response.json();
+            const latestIGN = data.name;
+            console.log(`    Fetched IGN: ${latestIGN}`);
+
+            if (latestIGN === undefined) {
+                reply += 'Failed to fetch your current IGN from Mojang API.\n';
+            } else if (ign !== latestIGN) {
+                // Update the database with the fetched IGN
+                const updateSql = `UPDATE members SET ign = ? WHERE uuid = ?`;
+                await db.query(updateSql, [latestIGN, uuid]);
+                console.log(`    Updated IGN to ${latestIGN} in database for UUID: ${uuid}`);
+                reply += `Your IGN has been updated to: ${latestIGN}\n`;
+            }
+        } catch (error) {
+            console.error('Error fetching IGN from Mojang API:', error);
+            reply += 'Failed to fetch your current IGN from Mojang API.\n';
+        }
+
         if (rolesToAdd.length > 0) {
             console.log('    Adding roles: ' + rolesToAdd.map((role) => '<@&' + role + '>').join(', '));
             reply += 'Adding: ' + rolesToAdd.map((role) => '<@&' + role + '>').join(', ') + '\n';

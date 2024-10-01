@@ -17,13 +17,20 @@ const fetch_specific_guild_data = async (client, db, guild_id) => {
             // Fetch Lily weight for the player
             const playerResponse = await fetch(`https://sky.shiiyu.moe/api/v2/profile/${member.uuid}`);
             const playerData = await playerResponse.json();
-            
-            // Fetch player's IGN from UUID
-            const playerNameResponse = await fetch(`https://api.mojang.com/user/profile/${member.uuid}`);
-            const playerNameData = await playerNameResponse.json();
-            const playerName = playerNameData.name;
-            
-            console.log(`    Player: ${playerName}`);
+
+            // Query the database to get the username from UUID
+            const [userRows] = await db.query('SELECT ign FROM members WHERE uuid = ?', [member.uuid]);
+            let playerName;
+            if (userRows.length > 0) {
+                playerName = userRows[0].ign;
+                console.log(`    Player found in database: ${playerName}`);
+            } else {
+                // If not found in database, fetch from Mojang API
+                const playerNameResponse = await fetch(`https://api.mojang.com/user/profile/${member.uuid}`);
+                const playerNameData = await playerNameResponse.json();
+                playerName = playerNameData.name;
+                console.log(`    Player fetched from Mojang API: ${playerName}`);
+            }
 
             let lilyWeight = 0;
             let skyblockXP = 0;

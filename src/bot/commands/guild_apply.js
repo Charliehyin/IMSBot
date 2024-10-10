@@ -364,6 +364,8 @@ If you miss the invite - be patient, you will be reinvited. DO NOT MAKE A TICKET
                 break;
         }
 
+        accepted_message += `\n<@${userid}>`;
+
         const WaitlistActions = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
@@ -444,7 +446,7 @@ const handle_guild_reject = async (interaction, db, client) => {
             console.log('    No open application found');
         }
 
-        let rejection_message = `You have been rejected from ${guildName}`;
+        let rejection_message = `You have been rejected from ${guildName} <@${userid}>`;
 
         // dm the user and send a message in the application channel
         const dm = await member.createDM();
@@ -537,7 +539,7 @@ const handle_guild_ask_to_leave = async (interaction, db, client) => {
         let application_channel = rows[0].application_channel;
         application_channel = await client.channels.fetch(application_channel);
 
-        let ask_to_leave_message = `It is your turn to be invited to ${guildName}. Please leave your guild so you can get invited. `;
+        let ask_to_leave_message = `It is your turn to be invited to ${guildName}. Please leave your guild so you can get invited. <@${userid}>`;
 
         const dm = await member.createDM();
         dm.send(ask_to_leave_message);
@@ -570,7 +572,7 @@ const handle_guild_notify_invited = async (interaction, db, client) => {
         let application_channel = rows[0].application_channel;
         application_channel = await client.channels.fetch(application_channel);
 
-        let notify_invited_message = `You have been invited to ${guildName}. Make sure to accept the invite. If you missed the invite, don't worry, you will receive another one. `;
+        let notify_invited_message = `You have been invited to ${guildName}. Make sure to accept the invite. If you missed the invite, don't worry, you will receive another one. <@${userid}>`;
 
         const dm = await member.createDM();
         dm.send(notify_invited_message);

@@ -249,63 +249,66 @@ async function checkExpiredPunishments(client, db) {
     const [rows] = await db.query(sql, [Date.now()]);
 
     for (const punishment of rows) {
-        const guild = await client.guilds.fetch(punishment.guild_id);
-        const member = await guild.members.fetch(punishment.user_id);
+        try {
+            const guild = await client.guilds.fetch(punishment.guild_id);
+            const member = await guild.members.fetch(punishment.user_id);
 
-        if (member) {
-            if (punishment.punishment_type === 'mute') {
-                await member.roles.remove(muted_role);
-                console.log(`Unmuted ${member.user.tag} in ${guild.name}`);
+            if (member) {
+                if (punishment.punishment_type === 'mute') {
+                    await member.roles.remove(muted_role);
+                    console.log(`Unmuted ${member.user.tag} in ${guild.name}`);
+                }
+                else if (punishment.punishment_type === 'restrict') {
+                    await member.roles.remove(restricted_role);
+                    console.log(`Unrestricted ${member.user.tag} in ${guild.name}`);
+                }
+                else if (punishment.punishment_type === 'ticket') {
+                    await member.roles.remove(ticket_restricted_role);
+                    console.log(`Un-ticket-restricted ${member.user.tag} in ${guild.name}`);
+                }
+                else if (punishment.punishment_type === 'flex') {
+                    await member.roles.remove(flex_restricted_role);
+                    console.log(`Un-flex-restricted ${member.user.tag} in ${guild.name}`);
+                }
+                else if (punishment.punishment_type === 'qna') {
+                    await member.roles.remove(qna_restricted_role);
+                    console.log(`Un-qna-restricted ${member.user.tag} in ${guild.name}`);
+                }
+                else if (punishment.punishment_type === 'suggestion') {
+                    await member.roles.remove(suggestion_restricted_role);
+                    console.log(`Un-suggestion-restricted ${member.user.tag} in ${guild.name}`);
+                }
+                else if (punishment.punishment_type === 'hos') {
+                    await member.roles.remove(hos_restricted_role);
+                    console.log(`Un-hos-restricted ${member.user.tag} in ${guild.name}`);
+                }
+                else if (punishment.punishment_type === 'vc') {
+                    await member.roles.remove(vc_restricted_role);
+                    console.log(`Un-vc-restricted ${member.user.tag} in ${guild.name}`);
+                }
+                else if (punishment.punishment_type === 'lfp') {
+                    await member.roles.remove(lfp_restricted_role);
+                    console.log(`Un-lfp-restricted ${member.user.tag} in ${guild.name}`);
+                }
+                else if (punishment.punishment_type === 'lfp_plus') {
+                    await member.roles.remove(lfp_plus_restricted_role);
+                    console.log(`Un-lfp_plus-restricted ${member.user.tag} in ${guild.name}`);
+                }
+                else if (punishment.punishment_type === 'bridge') {
+                    await member.roles.remove(bridge_restricted_role);
+                    console.log(`Un-bridge-restricted ${member.user.tag} in ${guild.name}`);
+                }
+                else if (punishment.punishment_type === 'xp') {
+                    await member.roles.remove(xp_restricted_role);
+                    console.log(`Un-xp-restricted ${member.user.tag} in ${guild.name}`);
+                }
+                else {
+                    console.log(`Unknown punishment type: ${punishment.punishment_type}`);
+                }
             }
-            else if (punishment.punishment_type === 'restrict') {
-                await member.roles.remove(restricted_role);
-                console.log(`Unrestricted ${member.user.tag} in ${guild.name}`);
-            }
-            else if (punishment.punishment_type === 'ticket') {
-                await member.roles.remove(ticket_restricted_role);
-                console.log(`Un-ticket-restricted ${member.user.tag} in ${guild.name}`);
-            }
-            else if (punishment.punishment_type === 'flex') {
-                await member.roles.remove(flex_restricted_role);
-                console.log(`Un-flex-restricted ${member.user.tag} in ${guild.name}`);
-            }
-            else if (punishment.punishment_type === 'qna') {
-                await member.roles.remove(qna_restricted_role);
-                console.log(`Un-qna-restricted ${member.user.tag} in ${guild.name}`);
-            }
-            else if (punishment.punishment_type === 'suggestion') {
-                await member.roles.remove(suggestion_restricted_role);
-                console.log(`Un-suggestion-restricted ${member.user.tag} in ${guild.name}`);
-            }
-            else if (punishment.punishment_type === 'hos') {
-                await member.roles.remove(hos_restricted_role);
-                console.log(`Un-hos-restricted ${member.user.tag} in ${guild.name}`);
-            }
-            else if (punishment.punishment_type === 'vc') {
-                await member.roles.remove(vc_restricted_role);
-                console.log(`Un-vc-restricted ${member.user.tag} in ${guild.name}`);
-            }
-            else if (punishment.punishment_type === 'lfp') {
-                await member.roles.remove(lfp_restricted_role);
-                console.log(`Un-lfp-restricted ${member.user.tag} in ${guild.name}`);
-            }
-            else if (punishment.punishment_type === 'lfp_plus') {
-                await member.roles.remove(lfp_plus_restricted_role);
-                console.log(`Un-lfp_plus-restricted ${member.user.tag} in ${guild.name}`);
-            }
-            else if (punishment.punishment_type === 'bridge') {
-                await member.roles.remove(bridge_restricted_role);
-                console.log(`Un-bridge-restricted ${member.user.tag} in ${guild.name}`);
-            }
-            else if (punishment.punishment_type === 'xp') {
-                await member.roles.remove(xp_restricted_role);
-                console.log(`Un-xp-restricted ${member.user.tag} in ${guild.name}`);
-            }
-            else {
-                console.log(`Unknown punishment type: ${punishment.punishment_type}`);
-            }
+        } catch (error) {
+            console.error('Error removing punishment from user:', error);
         }
-
         await db.query('DELETE FROM current_punishments WHERE id = ?', [punishment.id]);
     }
 }

@@ -204,8 +204,24 @@ const punish_interaction = async (interaction, db, punishment_type) => {
             // Log the punishment using the modified fakeInteraction
             await punishments_interaction(fakeInteraction, db, 'add');
         }
+        let dm_string;
+        if (punishment_type === 'mute') {
+            // Reply to the original interaction in the channel where the command was run
+            dm_string = `You have been muted in ${interaction.guild.name} for ${duration}. Reason: ${reason}`;
+        }
+        else if (punishment_type === 'restrict') {
+            dm_string = `You have been restricted in ${interaction.guild.name} for ${duration}. Reason: ${reason}`;
+        }
+        else {
+            dm_string = `You have been ${punishment_type} restricted in ${interaction.guild.name} for ${duration}. Reason: ${reason}`;
+        }
+        try {
+            await user.send(dm_string);
+        } catch (error) {
+            console.error(`Failed to send DM to ${user.tag}: ${error}`);
+        }
 
-        // Reply to the original interaction in the channel where the command was run
+        let punishment_string;
         if (punishment_type === 'mute') {
             punishment_string = `**${interaction.user}** muted <@${user.id}> for ${duration}. Reason: ${reason}`;
         }

@@ -3,7 +3,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const { embedColor, ims_guild_id, imc_guild_id, ima_guild_id } = require('../constants');
 const API_KEY = process.env.HYPIXEL_API_KEY;
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
-const members_per_page = 25;
+const members_per_page = 65;
 
 const fetch_specific_guild_data = async (client, db, guild_id) => {
     const fetch = (await import('node-fetch')).default;
@@ -273,7 +273,7 @@ const rank_guild_interaction = async (interaction, db) => {
 
                 // Create an array of text for each member, displaying username and weight gain
                 const memberTexts = memberWeightGains.map((member, index) => {
-                    return `${index + 1}. \`${member.username}\` - ${member.weight_gain.toLocaleString()}\n`;
+                    return `${index + 1}\\. \`${member.username}\` - ${member.weight_gain.toLocaleString()}\n`;
                 });
 
                 await create_embed(interaction, 'Weekly Weight Gain', `Ranking of ${guildData.guild.name} members by Weekly Weight Gain\nLatest update <t:${parseInt(endTimestamp/1000)}:R>\nEarliest update <t:${parseInt(startTimestamp/1000)}:R>\n`, memberTexts);
@@ -324,7 +324,7 @@ const rank_guild_interaction = async (interaction, db) => {
 
                 // Create an array of text for each member, displaying username and XP gain
                 const memberTexts = memberXPGains.map((member, index) => {
-                    return `${index + 1}. \`${member.username}\` - ${member.xp_gain.toLocaleString()}\n`;
+                    return `${index + 1}\\. \`${member.username}\` - ${member.xp_gain.toLocaleString()}\n`;
                 });
 
                 await create_embed(interaction, 'Weekly Skyblock XP Gain', `Ranking of ${guildData.guild.name} members by Weekly Skyblock XP Gain\nLatest update <t:${parseInt(endTimestamp/1000)}:R>\nEarliest update <t:${parseInt(startTimestamp/1000)}:R>\n`, memberTexts);
@@ -377,7 +377,7 @@ const rank_guild_interaction = async (interaction, db) => {
 
                 // Create an array of text for each member, displaying username and daily GXP
                 const memberTexts = member_data.map((member, index) => {
-                    return `${index + 1}. \`${member.username}\` - ${member.gxp.toLocaleString()} GXP\n`;
+                    return `${index + 1}\\. \`${member.username}\` - ${member.gxp.toLocaleString()} GXP\n`;
                 });
 
                 await create_embed(interaction, 'Daily Guild XP Ranking', `Ranking of ${guildData.guild.name} members by Daily Guild XP\n`, memberTexts);
@@ -433,7 +433,7 @@ const rank_guild_interaction = async (interaction, db) => {
 
                 // Create an array of text for each member, displaying username and weekly GXP
                 const memberTexts = member_data.map((member, index) => {
-                    return `${index + 1}. \`${member.username}\` - ${member.gxp.toLocaleString()} GXP\n`;
+                    return `${index + 1}\\. \`${member.username}\` - ${member.gxp.toLocaleString()} GXP\n`;
                 });
 
                 await create_embed(interaction, 'Weekly Guild XP Ranking', `Ranking of ${guildData.guild.name} members by Weekly Guild XP\n`, memberTexts);
@@ -467,7 +467,7 @@ const rank_guild_interaction = async (interaction, db) => {
                 }
                 // Create an array of text for each member, displaying username and XP
                 const memberTexts = sortedMembers.map((member, index) => {
-                    return `${index + 1}. \`${member.username}\` - ${(member.xp / 100).toFixed(2)}\n`;
+                    return `${index + 1}\\. \`${member.username}\` - ${(member.xp / 100).toFixed(2)}\n`;
                 });
 
                 await create_embed(interaction, 'Skyblock Level Ranking', `Ranking of ${guild} members by Skyblock Level\nUpdated <t:${parseInt(latestTimestamp/1000)}:R>\n`, memberTexts);
@@ -500,7 +500,7 @@ const rank_guild_interaction = async (interaction, db) => {
                 }
                 // Create an array of text for each member, displaying username and weight
                 const memberTexts = sortedMembers.map((member, index) => {
-                    return `${index + 1}. \`${member.username}\` - ${member.weight.toLocaleString()}\n`;
+                    return `${index + 1}\\. \`${member.username}\` - ${member.weight.toLocaleString()}\n`;
                 });
 
                 await create_embed(interaction, 'Lily Weight Ranking', `Ranking of ${guild} members by Lily Weight\nUpdated <t:${parseInt(latestTimestamp/1000)}:R>\n`, memberTexts);

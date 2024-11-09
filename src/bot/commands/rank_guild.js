@@ -14,7 +14,7 @@ const fetch_specific_guild_data = async (client, db, guild_id) => {
 
     for (const member of members) {
         try {
-            // Fetch Lily weight for the player
+            // Fetch data for the player
             const playerResponse = await fetch(`https://sky.shiiyu.moe/api/v2/profile/${member.uuid}`);
             const playerData = await playerResponse.json();
 
@@ -32,7 +32,6 @@ const fetch_specific_guild_data = async (client, db, guild_id) => {
                 console.log(`    Player fetched from Mojang API: ${playerName}`);
             }
 
-            let lilyWeight = 0;
             let skyblockXP = 0;
             if (playerData.profiles) {
                 const profileKeys = Object.keys(playerData.profiles);
@@ -42,12 +41,8 @@ const fetch_specific_guild_data = async (client, db, guild_id) => {
                     }
 
                     console.log(`        Profile: ${profileKey}`);
-                    console.log(`        Weight: ${playerData.profiles[profileKey].data.weight.lily.total}`);
+                    console.log(`        UUID: ${member.uuid}`);
 
-                    const profileWeight = playerData.profiles[profileKey].data.weight.lily.total;
-                    if (profileWeight && profileWeight > lilyWeight) {
-                        lilyWeight = profileWeight;
-                    }
                     const profileXP = playerData.profiles[profileKey].data.skyblock_level.xp;
                     if (profileXP && profileXP > skyblockXP) {
                         skyblockXP = profileXP;
@@ -57,7 +52,6 @@ const fetch_specific_guild_data = async (client, db, guild_id) => {
                 players.push({
                     username: playerName,
                     uuid: member.uuid,
-                    lilyWeight: parseInt(lilyWeight),
                     skyblockXP: parseInt(skyblockXP)
                 });
             }
@@ -65,16 +59,16 @@ const fetch_specific_guild_data = async (client, db, guild_id) => {
         } catch (error) {
             console.error(`Error fetching data for player ${member.uuid}:`, error);
         }
+        await new Promise(resolve => setTimeout(resolve, 3000));
     }
     // Add player data to the database
     const currentTimestamp = Date.now();
-    const insertQuery = 'INSERT INTO guild_member_data (guild_id, user_id, username, time_stamp, lily_weight, skyblock_xp) VALUES ?';
+    const insertQuery = 'INSERT INTO guild_member_data (guild_id, user_id, username, time_stamp, skyblock_xp) VALUES ?';
     const values = players.map(player => [
         guild_id,
         player.uuid,
         player.username,
         currentTimestamp,
-        player.lilyWeight,
         player.skyblockXP
     ]);
 
@@ -171,12 +165,10 @@ const rank_guild_command = new SlashCommandBuilder()
             .setDescription('statistic to rank by')
             .setRequired(true)
             .addChoices(
-                { name: 'Weekly Weight Gain', value: 'weekly_weight_gain' },
                 { name: 'Weekly Skyblock XP Gain', value: 'weekly_xp_gain' },
                 { name: 'Daily Guild XP', value: 'daily_gxp' },
                 { name: 'Weekly Guild XP', value: 'weekly_gxp' },
                 { name: 'Skyblock Level', value: 'level' },
-                { name: 'Lily Weight', value: 'lily_weight' },
             ))
     .addStringOption(option =>
         option.setName('order')
@@ -227,58 +219,8 @@ const rank_guild_interaction = async (interaction, db) => {
 
             console.log(`    Valid guild found: ${guildData.guild.name}`);
             
-            if (statistic === 'weekly_weight_gain') {
-                const currentTimestamp = Date.now();
-                const oneWeekAgo = currentTimestamp - 7 * 24 * 60 * 60 * 1000;
-
-                const [timestamps] = await db.query(
-                    'SELECT MIN(time_stamp) as oldest_timestamp, MAX(time_stamp) as newest_timestamp FROM guild_member_data WHERE guild_id = ? AND time_stamp > ?',
-                    [guild_id, oneWeekAgo]
-                );
-
-                if (!timestamps[0].oldest_timestamp) {
-                    await interaction.reply('No data available for the past week.');
-                    return;
-                }
-
-                const startTimestamp = timestamps[0].oldest_timestamp;
-                const endTimestamp = timestamps[0].newest_timestamp;
-                console.log(`    Start timestamp: ${new Date(startTimestamp).toISOString()}`);
-                console.log(`    End timestamp: ${new Date(endTimestamp).toISOString()}`);
-
-                // Fetch weight data for all members at start and end timestamps
-                const [memberWeights] = await db.query(
-                    `SELECT username,
-                    MAX(CASE WHEN time_stamp = ? THEN lily_weight END) as start_weight,
-                    MAX(CASE WHEN time_stamp = ? THEN lily_weight END) as end_weight
-                    FROM guild_member_data
-                    WHERE guild_id = ? AND time_stamp IN (?, ?)
-                    GROUP BY user_id, username`,
-                    [startTimestamp, endTimestamp, guild_id, startTimestamp, endTimestamp]
-                );
-
-                // Calculate weight gain for each member
-                let memberWeightGains = memberWeights.map(member => ({
-                    username: member.username,
-                    weight_gain: member.start_weight === null ? 'new' : (member.end_weight || 0) - (member.start_weight || 0)
-                }));
-
-                // Sort members by weight gain in descending order
-                memberWeightGains.sort((a, b) => b.weight_gain - a.weight_gain);
-
-                const order = interaction.options.getString('order');
-                if (order === 'ascending') {
-                    memberWeightGains.reverse();
-                }
-
-                // Create an array of text for each member, displaying username and weight gain
-                const memberTexts = memberWeightGains.map((member, index) => {
-                    return `${index + 1}\\. \`${member.username}\` - ${member.weight_gain.toLocaleString()}\n`;
-                });
-
-                await create_embed(interaction, 'Weekly Weight Gain', `Ranking of ${guildData.guild.name} members by Weekly Weight Gain\nLatest update <t:${parseInt(endTimestamp/1000)}:R>\nEarliest update <t:${parseInt(startTimestamp/1000)}:R>\n`, memberTexts);
-                
-            } else if (statistic === 'weekly_xp_gain') {
+                            
+            if (statistic === 'weekly_xp_gain') {
                 const currentTimestamp = Date.now();
                 const oneWeekAgo = currentTimestamp - 7 * 24 * 60 * 60 * 1000;
 
@@ -471,39 +413,6 @@ const rank_guild_interaction = async (interaction, db) => {
                 });
 
                 await create_embed(interaction, 'Skyblock Level Ranking', `Ranking of ${guild} members by Skyblock Level\nUpdated <t:${parseInt(latestTimestamp/1000)}:R>\n`, memberTexts);
-            } else if (statistic === 'lily_weight') {
-                // Fetch the latest lily weights for the guild from the database
-                let [rows] = await db.query('SELECT time_stamp FROM guild_member_data WHERE guild_id = ? ORDER BY time_stamp DESC LIMIT 1', [guild_id]);
-                const latestTimestamp = rows[0].time_stamp;
-
-                console.log(`    Latest timestamp: ${latestTimestamp}`);
-                console.log(`    Guild ID: ${guild_id}`);
-
-                [rows] = await db.query(
-                    'SELECT username, lily_weight FROM guild_member_data WHERE time_stamp = ? AND guild_id = ?',
-                    [latestTimestamp, guild_id]
-                );
-
-                if (rows.length === 0) {
-                    await interaction.reply(`No data found for the guild with ID: ${guild_id}`);
-                    return;
-                }
-
-                // Sort members by lily weight in descending order
-                const sortedMembers = rows
-                    .map((row, index) => ({ username: row.username, weight: row.lily_weight }))
-                    .sort((a, b) => b.weight - a.weight);
-
-                const order = interaction.options.getString('order');
-                if (order === 'ascending') {
-                    sortedMembers.reverse();
-                }
-                // Create an array of text for each member, displaying username and weight
-                const memberTexts = sortedMembers.map((member, index) => {
-                    return `${index + 1}\\. \`${member.username}\` - ${member.weight.toLocaleString()}\n`;
-                });
-
-                await create_embed(interaction, 'Lily Weight Ranking', `Ranking of ${guild} members by Lily Weight\nUpdated <t:${parseInt(latestTimestamp/1000)}:R>\n`, memberTexts);
             } else {
                 await interaction.reply(`Invalid statistic: ${statistic}`);
                 return;

@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { punishments_interaction } = require('./punishments');
-const { punishment_log_channel, lfp_access_role, lfp_plus_access_role, bridge_access_role, muted_role, restricted_role, ticket_restricted_role, flex_restricted_role, qna_restricted_role, suggestion_restricted_role, hos_restricted_role, vc_restricted_role, lfp_restricted_role, lfp_plus_restricted_role, bridge_restricted_role, xp_restricted_role } = require('../constants');
+const { punishment_log_channel, lfp_access_role, lfp_plus_access_role, bridge_access_role, muted_role, restricted_role, ticket_restricted_role, flex_restricted_role, qna_restricted_role, suggestion_restricted_role, hos_restricted_role, vc_restricted_role, lfp_restricted_role, lfp_plus_restricted_role, bridge_restricted_role, xp_restricted_role, appeals_server } = require('../constants');
 
 const mute_command = new SlashCommandBuilder()
     .setName('mute')
@@ -60,6 +60,67 @@ const restrict_command = new SlashCommandBuilder()
         option.setName('silent')
             .setDescription('Do not log this restriction')
             .setRequired(false));
+
+const ban_command = new SlashCommandBuilder()
+    .setName('ban')
+    .setDescription('Ban a user')
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
+    .addMentionableOption(option =>
+        option.setName('user')
+            .setDescription('The user to ban')
+            .setRequired(true))
+    .addStringOption(option =>
+        option.setName('reason')
+            .setDescription('Reason for banning')
+            .setRequired(true));
+
+const ban_interaction = async (interaction, db) => {
+    const user = interaction.options.getUser('user');
+    let reason = interaction.options.getString('reason');
+    
+    const punishmentLogChannel = await interaction.guild.channels.fetch(punishment_log_channel);
+
+    // Modify the fakeInteraction to use the punishment log channel
+    const fakeInteraction = {
+        options: {
+            getMentionable: () => ({ id: user.id }),
+            getSubcommand: () => 'add',
+            getString: (name) => {
+                if (name === 'punishment') {
+                    return 'ban';
+                }
+                else if (name === 'reason') {
+                    return reason;
+                }
+                else {
+                    return null;
+                }
+            }
+        },
+        reply: async (content) => {
+            // Send the reply to the punishment log channel instead
+            await punishmentLogChannel.send(content);
+        },
+        fetchReply: async () => {
+            // Return the last message in the punishment log channel
+            const messages = await punishmentLogChannel.messages.fetch({ limit: 1 });
+            return messages.first();
+        },
+        guildId: interaction.guildId,
+        channelId: punishment_log_channel,
+        createdTimestamp: interaction.createdTimestamp
+    };
+
+    // Log the punishment using the modified fakeInteraction
+    await punishments_interaction(fakeInteraction, db, 'add');
+
+    if (!reason.includes(appeals_server)) {
+        reason = `${reason}\n\nAppeal at: ${appeals_server}`;
+    }
+
+    await interaction.guild.members.ban(user, { reason: reason });
+    await interaction.reply(`${user} has been banned. \nReason: ${reason}`);
+}
 
 const punish_interaction = async (interaction, db, punishment_type) => {
     const user = interaction.options.getUser('user');
@@ -329,4 +390,4 @@ async function checkExpiredPunishments(client, db) {
     }
 }
 
-module.exports = { mute_command, restrict_command, punish_interaction, checkExpiredPunishments };
+module.exports = { mute_command, restrict_command, ban_command, ban_interaction, punish_interaction, checkExpiredPunishments };

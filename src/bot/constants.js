@@ -58,6 +58,8 @@ const IMS_application_category = '846731779306291210';
 const IMC_application_category = '846758786014511104';
 const IMA_application_category = '1026652567498928239';
 
+const appeals_server = 'https://discord.gg/YJvnyrr7Mc';
+
 module.exports = { 
     embedColor, 
     guild_id,
@@ -105,5 +107,6 @@ module.exports = {
     IMA_application_channel,
     IMS_application_category,
     IMC_application_category,
-    IMA_application_category
+    IMA_application_category,
+    appeals_server
 }

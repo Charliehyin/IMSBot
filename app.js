@@ -31,7 +31,7 @@ const {
     handle_guild_notify_invited
 } = require('./src/bot/commands/guild_apply');
 const { skycrypt_command, skycrypt_interaction } = require('./src/bot/commands/skycrypt');
-const { mute_command, restrict_command, punish_interaction, checkExpiredPunishments } = require('./src/bot/commands/mute_restrict');
+const { mute_command, restrict_command, ban_command, ban_interaction, punish_interaction, checkExpiredPunishments } = require('./src/bot/commands/mute_restrict_ban');
 const { autosync_roles_all_guilds } = require('./src/bot/commands/autosync_roles');
 const { fetch_guild_data, rank_guild_command, rank_guild_interaction } = require('./src/bot/commands/rank_guild');
 // Create a new client instance
@@ -85,6 +85,7 @@ async function registerSlashCommands() {
         skycrypt_command,
         mute_command,
         restrict_command,
+        ban_command,
         rank_guild_command
     ].map(command => command.toJSON());
 
@@ -139,6 +140,9 @@ client.on('interactionCreate', async interaction => {
                 break;
             case 'restrict':
                 await punish_interaction(interaction, db);
+                break;
+            case 'ban':
+                await ban_interaction(interaction, db);
                 break;
             case 'rank_guild':
                 await rank_guild_interaction(interaction, db);

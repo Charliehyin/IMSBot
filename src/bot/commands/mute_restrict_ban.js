@@ -75,54 +75,62 @@ const ban_command = new SlashCommandBuilder()
             .setRequired(true));
 
 const ban_interaction = async (interaction, db) => {
+    interaction.deferReply();
     const user = interaction.options.getUser('user');
     let reason = interaction.options.getString('reason');
-    
-    const punishmentLogChannel = await interaction.guild.channels.fetch(punishment_log_channel);
 
-    // Modify the fakeInteraction to use the punishment log channel
-    const fakeInteraction = {
-        options: {
-            getMentionable: () => ({ id: user.id }),
-            getSubcommand: () => 'add',
-            getString: (name) => {
-                if (name === 'punishment') {
-                    return 'ban';
-                }
-                else if (name === 'reason') {
-                    return reason;
-                }
-                else {
-                    return null;
-                }
-            }
-        },
-        reply: async (content) => {
-            // Send the reply to the punishment log channel instead
-            await punishmentLogChannel.send(content);
-        },
-        fetchReply: async () => {
-            // Return the last message in the punishment log channel
-            const messages = await punishmentLogChannel.messages.fetch({ limit: 1 });
-            return messages.first();
-        },
-        guildId: interaction.guildId,
-        channelId: punishment_log_channel,
-        createdTimestamp: interaction.createdTimestamp
-    };
+    try {
+        const punishmentLogChannel = await interaction.guild.channels.fetch(punishment_log_channel);
 
-    // Log the punishment using the modified fakeInteraction
-    await punishments_interaction(fakeInteraction, db, 'add');
+        // Modify the fakeInteraction to use the punishment log channel
+        const fakeInteraction = {
+            options: {
+                getMentionable: () => ({ id: user.id }),
+                getSubcommand: () => 'add',
+                getString: (name) => {
+                    if (name === 'punishment') {
+                        return 'ban';
+                    }
+                    else if (name === 'reason') {
+                        return reason;
+                    }
+                    else {
+                        return null;
+                    }
+                }
+            },
+            reply: async (content) => {
+                // Send the reply to the punishment log channel instead
+                await punishmentLogChannel.send(content);
+            },
+            fetchReply: async () => {
+                // Return the last message in the punishment log channel
+                const messages = await punishmentLogChannel.messages.fetch({ limit: 1 });
+                return messages.first();
+            },
+            guildId: interaction.guildId,
+            channelId: punishment_log_channel,
+            createdTimestamp: interaction.createdTimestamp
+        };
 
-    if (!reason.includes(appeals_server)) {
-        reason = `${reason}\n\nAppeal at: ${appeals_server}`;
+        // Log the punishment using the modified fakeInteraction
+        await punishments_interaction(fakeInteraction, db, 'add');
+
+        if (!reason.includes(appeals_server)) {
+            reason = `${reason}\n\nAppeal at: ${appeals_server}`;
+        }
+
+        await user.send(`You have been banned from Ironman Sweats.\nReason: ${reason}`);
+        await interaction.guild.members.ban(user, { reason: reason });
+        await interaction.editReply(`${user} has been banned. \nReason: ${reason}`);
+    } catch (error) {
+        console.error('Error banning user:', error);
+        interaction.editReply(`An error occurred while trying to ban the user: ${error}`);
     }
-
-    await interaction.guild.members.ban(user, { reason: reason });
-    await interaction.reply(`${user} has been banned. \nReason: ${reason}`);
 }
 
 const punish_interaction = async (interaction, db, punishment_type) => {
+    interaction.deferReply();
     const user = interaction.options.getUser('user');
     const duration = interaction.options.getString('duration');
     const reason = interaction.options.getString('reason');
@@ -179,14 +187,14 @@ const punish_interaction = async (interaction, db, punishment_type) => {
             punishment_type = 'xp';
         }
         else {
-            return interaction.reply('Invalid punishment type. Please use a valid punishment type.');
+            return interaction.editReply('Invalid punishment type. Please use a valid punishment type.');
         }
     }
 
     // Parse duration
     const durationInMs = parseDuration(duration);
     if (!durationInMs) {
-        return interaction.reply('Invalid duration format. Please use formats like 1h, 1d, or 1w.');
+        return interaction.editReply('Invalid duration format. Please use formats like 1h, 1d, or 1w.');
     }
 
     const endTime = Date.now() + durationInMs;
@@ -292,11 +300,11 @@ const punish_interaction = async (interaction, db, punishment_type) => {
         else {
             punishment_string = `**${interaction.user}** ${punishment_type} restricted <@${user.id}> for ${duration}. Reason: ${reason}`;
         }
-        await interaction.reply(punishment_string);
+        await interaction.editReply(punishment_string);
 
     } catch (error) {
         console.error('Error muting user:', error);
-        interaction.reply(`An error occurred while trying to punish the user: ${error}`);
+        interaction.editReply(`An error occurred while trying to punish the user: ${error}`);
     }
 };
 

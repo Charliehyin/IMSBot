@@ -56,7 +56,7 @@ const db = mysql.createPool({
 client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
     botStatus.isRunning = true; // Set bot status to running
-    fetch_guild_data(client, db);
+    // fetch_guild_data(client, db);
     checkExpiredPunishments(client, db);
     // autosync_roles_all_guilds(client, db);
     setInterval(async () => {

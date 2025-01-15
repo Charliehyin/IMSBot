@@ -153,11 +153,12 @@ const create_application = async (interaction, db, client, member, ign, applicat
 const handle_guild_selection = async (interaction, db, client) => {
     try {
         console.log('Applying for guild')
+        await interaction.deferReply({ ephemeral: true });
         let sql = `SELECT uuid FROM members WHERE discord_id = ?`;
         let [rows] = await db.query(sql, [interaction.user.id]);
 
         if (rows.length === 0) {
-            await interaction.reply({ content: 'You must link your Minecraft account before applying for a guild', ephemeral: true });
+            await interaction.editReply({ content: 'You must link your Minecraft account before applying for a guild' });
             return;
         }
 
@@ -167,7 +168,7 @@ const handle_guild_selection = async (interaction, db, client) => {
         [rows] = await db.query(sql, [uuid]);
 
         if (rows.length > 0) {
-            await interaction.reply({ content: `You are on the blacklist and cannot apply for a guild. \nReason: ${rows[0].reason}`, ephemeral: true });
+            await interaction.editReply({ content: `You are on the blacklist and cannot apply for a guild. \nReason: ${rows[0].reason}` });
             return;
         }
 
@@ -196,7 +197,7 @@ const handle_guild_selection = async (interaction, db, client) => {
         console.log(`    User ${ign} has Skyblock XP: ${skyblock_xp}`)
 
         if (skyblock_xp < requiredXp) {
-            await interaction.reply({ content: `You must be Skyblock Level ${guildReq} to apply for ${guildName.replace('_', ' ')}`, ephemeral: true });
+            await interaction.editReply({ content: `You must be Skyblock Level ${guildReq} to apply for ${guildName.replace('_', ' ')}` });
             console.log(`    User ${ign} does not meet the requirements for ${guildName}`);
             return;
         }
@@ -206,7 +207,7 @@ const handle_guild_selection = async (interaction, db, client) => {
         [rows] = await db.query(sql, [ign.toLowerCase()]);
 
         if (rows.length > 0) {
-            await interaction.reply({ content: `You already have an open application for ${rows[0].guild}. Please wait for a response.`, ephemeral: true });
+            await interaction.editReply({ content: `You already have an open application for ${rows[0].guild}. Please wait for a response.` });
             console.log(`    User ${ign} already has an open application for ${rows[0].guild}`);
             return;
         }
@@ -225,7 +226,7 @@ const handle_guild_selection = async (interaction, db, client) => {
         }
 
         if (applyMessage === null) {
-            await interaction.reply({ content: `An error occurred while applying for the guild: ${error.message}\nPlease make a ticket. `, ephemeral: true });
+            await interaction.editReply({ content: `An error occurred while applying for the guild: ${error.message}\nPlease make a ticket. ` });
             return;
         }
         console.log(`    Application channel has been created: ${channelId}`)
@@ -249,10 +250,10 @@ const handle_guild_selection = async (interaction, db, client) => {
 
         await applyMessage.edit({ components: [ApplicationActions] });
 
-        await interaction.reply({ content: `You have successfully applied for ${guildName.replace('_', ' ')}.`, ephemeral: true });
+        await interaction.editReply({ content: `You have successfully applied for ${guildName.replace('_', ' ')}. <#${channelId}>` });
     } catch (error) {
         console.error('Error applying for guild:', error);
-        interaction.reply({ content: `An error occurred while applying for the guild: ${error.message}`, ephemeral: true });
+        await interaction.editReply({ content: `An error occurred while applying for the guild: ${error.message}` });
     }
 }
 
@@ -341,7 +342,7 @@ If you miss the invite - be patient, you will be reinvited. DO NOT MAKE A TICKET
             case 'Ironman Sweats':
                 channel = await client.channels.fetch(IMS_application_channel);
                 waitlist_channel = await client.channels.fetch(IMS_waitlist);
-                waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>)`);
+                waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>) <#${application_channel}>`);
 
                 channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
                 accepted_message += `<#${IMS_waitlist}>`;
@@ -349,7 +350,7 @@ If you miss the invite - be patient, you will be reinvited. DO NOT MAKE A TICKET
             case 'Ironman Casuals':
                 channel = await client.channels.fetch(IMC_application_channel);
                 waitlist_channel = await client.channels.fetch(IMC_waitlist);
-                waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>)`);
+                waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>) <#${application_channel}>`);
 
                 channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
                 accepted_message += `<#${IMC_waitlist}>`;
@@ -357,7 +358,7 @@ If you miss the invite - be patient, you will be reinvited. DO NOT MAKE A TICKET
             case 'Ironman Academy':
                 channel = await client.channels.fetch(IMA_application_channel);
                 waitlist_channel = await client.channels.fetch(IMA_waitlist);
-                waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>)`);
+                waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>) <#${application_channel}>`);
 
                 channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
                 accepted_message += `<#${IMA_waitlist}>`;

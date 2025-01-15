@@ -134,8 +134,9 @@ const punishments_interaction = async (interaction, db, subcommand) => {
         
             for (let i = 0; i < rows.length; i += itemsPerPage) {
                 const pageRows = rows.slice(i, i + itemsPerPage);
+                
                 const embed = new EmbedBuilder()
-                    .setTitle(`Viewing Punishments for ${username}`)
+                    .setTitle(`Viewing Punishments for ${username} (${rows.length} total)`)
                     .setColor('#FF0000')
                     .setFooter({ text: `Page ${pages.length + 1}/${Math.ceil(rows.length / itemsPerPage)}` });
         
@@ -146,7 +147,7 @@ const punishments_interaction = async (interaction, db, subcommand) => {
                 pageRows.forEach(row => {
                     punishment_reason = row.punishment + ' - ' + row.reason;
                     if (punishment_reason.length > 55) {
-                        punishmentList += `[${punishment_reason.substring(0, 55)} ](${row.punishment_link})...\n`;
+                        punishmentList += `[${punishment_reason.substring(0, 55)}...](${row.punishment_link})\n`;
                     }
                     else {
                         punishmentList += `[${punishment_reason}](${row.punishment_link})\n`;
@@ -154,6 +155,14 @@ const punishments_interaction = async (interaction, db, subcommand) => {
                     timeList += `<t:${row.time_stamp}:R>\n`;
                     idList += `${row.id}\n`;
                 });
+
+                while (punishmentList.length > 1024) {
+                    i--;
+                    // Remove the last entry from each list
+                    punishmentList = punishmentList.substring(0, punishmentList.lastIndexOf('\n'));
+                    timeList = timeList.substring(0, timeList.lastIndexOf('\n')); 
+                    idList = idList.substring(0, idList.lastIndexOf('\n'));
+                }
         
                 embed.addFields(
                     { name: "Punishment", value: punishmentList, inline: true },

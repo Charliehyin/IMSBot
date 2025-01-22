@@ -120,9 +120,15 @@ const ban_interaction = async (interaction, db) => {
             reason = `${reason}\n\nAppeal at: ${appeals_server}`;
         }
 
-        await user.send(`You have been banned from Ironman Sweats.\nReason: ${reason}`);
+        let reply_string = `${user} has been banned. \nReason: ${reason}`;
+        try {
+            await user.send(`You have been banned from Ironman Sweats.\nReason: ${reason}`);
+        } catch (error) {
+            reply_string += `\n\nAlso, failed to send DM to ${user.tag}: ${error}`;
+        }
+
         await interaction.guild.members.ban(user, { reason: reason });
-        await interaction.editReply(`${user} has been banned. \nReason: ${reason}`);
+        await interaction.editReply(reply_string);
     } catch (error) {
         console.error('Error banning user:', error);
         interaction.editReply(`An error occurred while trying to ban the user: ${error}`);

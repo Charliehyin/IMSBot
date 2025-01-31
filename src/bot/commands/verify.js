@@ -40,10 +40,10 @@ const setup_verify_interaction = async (interaction) => {
             .setTitle('Verification')
             .setDescription(`Currently you only have access to certain channels. In order to gain full access you have to verify. To do this:
 
-1) Follow the video below(click the Help button), replacing CrypticPlasma's name with your Discord 
+1) Follow the video below(click the Help button), replacing CrypticPlasma's name with your Discord username.
 2) Click on the verify button and type your Minecraft Name to verify! 
 
-Go ahead and create a ticket at <#846577784402608158> if you are still having trouble.`);
+Create a ticket **ONLY** if you are still having trouble after waiting a couple of minutes.`);
         
         const guildButtons = new ActionRowBuilder()
             .addComponents(

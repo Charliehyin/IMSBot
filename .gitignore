@@ -2,3 +2,4 @@ references/
 node_modules/
 .env
 testing/
+.DS_Store

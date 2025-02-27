@@ -121,6 +121,8 @@ const ban_interaction = async (interaction, db) => {
             reason = `${reason}\n\nAppeal at: ${appeals_server}`;
         }
 
+        let reply_string = `${user} has been banned. \nReason: ${reason}`;  
+
         // Get uuid from user's discord id from db
         let sql = `SELECT uuid FROM members WHERE discord_id = ?`;
         let [rows] = await db.query(sql, [user.id]);
@@ -150,9 +152,9 @@ const ban_interaction = async (interaction, db) => {
             // blacklist uuid
             sql = `INSERT INTO blacklist (ign, uuid, reason, cheater, time_stamp) VALUES (?, ?, ?, ?, ?)`;
             await db.query(sql, [ign, uuid, reason, cheater, Date.now()]);
+            reply_string += `\n\nAlso, ${ign}(${uuid}) has been blacklisted from this server. Cheater status: ${cheater}`;
         }
 
-        let reply_string = `${user} has been banned. \nReason: ${reason}`;
         try {
             await user.send(`You have been banned from Ironman Sweats.\nReason: ${reason}`);
         } catch (error) {

@@ -120,8 +120,15 @@ const verifyMember = async (discord_username, ign, discord_id, db) => {
         }
         console.log(`    ${ign}'s Minecraft UUID: ${uuid}`);
 
+        // Check if member is blacklisted
+        let sql = `SELECT * FROM blacklist WHERE uuid = ?`;
+        let [blacklist_rows] = await db.query(sql, [uuid]);
+        if (blacklist_rows.length > 0) {
+            return "    You are blacklisted from this server";
+        }
+
         // Check if member exists in db
-        let sql = `SELECT ign FROM members WHERE discord_id = ? AND uuid = ?`;
+        sql = `SELECT ign FROM members WHERE discord_id = ? AND uuid = ?`;
         let [rows] = await db.query(sql, [discord_id, uuid]);
         if (rows.length > 0) {
             await db.query(`UPDATE members SET ign = ? WHERE discord_id = ?`, [ign, discord_id]);

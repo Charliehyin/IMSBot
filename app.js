@@ -15,7 +15,7 @@ const {
     help_button_interaction
 } = require('./src/bot/commands/verify');
 const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_roles');
-const { automod_channel, general_channel } = require('./src/bot/constants');
+const { guild_id, automod_channel, general_channel } = require('./src/bot/constants');
 const { blacklist_command, blacklist_interaction } = require('./src/bot/commands/blacklist');
 const { get_uuid_command, get_uuid_interaction } = require('./src/bot/commands/get_uuid');
 const { punishments_command, punishments_interaction } = require('./src/bot/commands/punishments');
@@ -192,6 +192,9 @@ client.on('interactionCreate', async interaction => {
 
 // When a message is created
 client.on('messageCreate', async message => {
+    // Ignore messages not in IMS
+    if (message.guild.id !== guild_id) return;
+    
     const channel = await client.channels.fetch(automod_channel);
 
     // Ignore messages from bots

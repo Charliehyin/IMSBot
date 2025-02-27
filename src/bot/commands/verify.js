@@ -121,7 +121,7 @@ const verifyMember = async (discord_username, ign, discord_id, db) => {
         console.log(`    ${ign}'s Minecraft UUID: ${uuid}`);
 
         // Check if member is blacklisted
-        let sql = `SELECT * FROM blacklist WHERE uuid = ?`;
+        let sql = `SELECT * FROM blacklist WHERE uuid = ? AND cheater = false`;
         let [blacklist_rows] = await db.query(sql, [uuid]);
         if (blacklist_rows.length > 0) {
             return "    You are blacklisted from this server";

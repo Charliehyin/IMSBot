@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { punishments_interaction } = require('./punishments');
-const { punishment_log_channel, lfp_access_role, lfp_plus_access_role, bridge_access_role, muted_role, restricted_role, ticket_restricted_role, flex_restricted_role, qna_restricted_role, suggestion_restricted_role, hos_restricted_role, vc_restricted_role, lfp_restricted_role, lfp_plus_restricted_role, bridge_restricted_role, xp_restricted_role, appeals_server } = require('../constants');
+const { punishment_log_channel, lfp_access_role, lfp_plus_access_role, bridge_access_role, muted_role, restricted_role, ticket_restricted_role, flex_restricted_role, qna_restricted_role, suggestion_restricted_role, hos_restricted_role, vc_restricted_role, lfp_restricted_role, lfp_plus_restricted_role, bridge_restricted_role, xp_restricted_role, appeals_server, cheater_role } = require('../constants');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const mute_command = new SlashCommandBuilder()
     .setName('mute')
@@ -118,6 +119,37 @@ const ban_interaction = async (interaction, db) => {
 
         if (!reason.includes(appeals_server)) {
             reason = `${reason}\n\nAppeal at: ${appeals_server}`;
+        }
+
+        // Get uuid from user's discord id from db
+        let sql = `SELECT uuid FROM members WHERE discord_id = ?`;
+        let [rows] = await db.query(sql, [user.id]);
+        if (rows.length > 0) {
+            let uuid = rows[0].uuid;
+            let ign;
+
+            try {
+                // Fetch current IGN from Mojang API
+                const response = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid.replace(/-/g, '')}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    ign = data.name;
+                } else {
+                    // Fallback to nickname/username if API call fails
+                    ign = user.nickname ?? user.username;
+                    console.error('Failed to fetch IGN from Mojang API:', await response.text());
+                }
+            } catch (error) {
+                // Fallback to nickname/username if API call fails
+                ign = user.nickname ?? user.username;
+                console.error('Error fetching IGN from Mojang API:', error);
+            }
+
+            let cheater = false;
+
+            // blacklist uuid
+            sql = `INSERT INTO blacklist (ign, uuid, reason, cheater, time_stamp) VALUES (?, ?, ?, ?, ?)`;
+            await db.query(sql, [ign, uuid, reason, cheater, Date.now()]);
         }
 
         let reply_string = `${user} has been banned. \nReason: ${reason}`;

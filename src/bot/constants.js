@@ -38,25 +38,25 @@ const lfp_plus_restricted_role = '1227956171411820605';
 const bridge_restricted_role = '891402639055654912';
 const xp_restricted_role = '1281754617428049951';
 
-const automod_channel = '1256290890432122921';
-const general_channel = '846532502125936651';
-const punishment_log_channel = '880457456952676352';
+const automod_channel = '1346625724865318912';
+const general_channel = '1346623017878552726';
+const punishment_log_channel = '1346625649590403162';
 
 const IMA_req = 150;
 const IMC_req = 250;
 const IMS_req = 400;
 
-const IMA_waitlist = '1028063356260712498';
-const IMC_waitlist = '846808959536463972';
-const IMS_waitlist = '846732264238088202';
+const IMA_waitlist = '1346626931293945886';
+const IMC_waitlist = '1346626909643214922';
+const IMS_waitlist = '1346626892849221672';
 
-const IMS_application_channel = '846732216268488736';
-const IMC_application_channel = '846808920966168637';
-const IMA_application_channel = '1026652713825615932';
+const IMS_application_channel = '1346630013751001141';
+const IMC_application_channel = '1346630037901938788';
+const IMA_application_channel = '1346630076422160446';
 
-const IMS_application_category = '846731779306291210';
-const IMC_application_category = '846758786014511104';
-const IMA_application_category = '1026652567498928239';
+const IMS_application_category = '1346629255118717121';
+const IMC_application_category = '1346629292834033795';
+const IMA_application_category = '1346629323213373560';
 
 const appeals_server = 'https://discord.gg/YJvnyrr7Mc';
 

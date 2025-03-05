@@ -193,7 +193,7 @@ client.on('interactionCreate', async interaction => {
 // When a message is created
 client.on('messageCreate', async message => {
     // Ignore messages not in IMS
-    if (message.guild.id !== guild_id) return;
+    // if (message.guild.id !== guild_id) return;
     
     const channel = await client.channels.fetch(automod_channel);
 

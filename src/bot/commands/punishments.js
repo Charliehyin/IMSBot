@@ -6,6 +6,7 @@ const punishments_command = new SlashCommandBuilder()
     .setName('punishments')
     .setDescription('Manage punishments')
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
+    .setDMPermission(false)
     .addSubcommand(subcommand =>
         subcommand
             .setName('add')

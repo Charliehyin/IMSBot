@@ -1,12 +1,13 @@
 require('dotenv').config();
 const { get_uuid_from_ign } = require('../utils/get_uuid_from_ign');
-const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, PermissionFlagsBits } = require('discord.js');
 const { verified_role, embedColor } = require('../constants');
 
 const setup_verify_command = new SlashCommandBuilder()
     .setName('setup_verify')
     .setDescription('Setup the verify button for the first time')
-    .setDefaultMemberPermissions(8);
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .setDMPermission(false);
 
 const verify_command = new SlashCommandBuilder()
     .setName('verify')

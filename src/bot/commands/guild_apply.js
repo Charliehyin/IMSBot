@@ -22,7 +22,8 @@ const {
 const setup_apply_command = new SlashCommandBuilder()
     .setName('setup_apply')
     .setDescription('Setup the guild application button')
-    .setDefaultMemberPermissions(1099511627776)
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
+    .setDMPermission(false)
     .addBooleanOption(option =>
         option.setName('ims_closed')
         .setDescription('If Ironman Sweats is closed'))

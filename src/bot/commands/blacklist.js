@@ -9,6 +9,7 @@ const blacklist_command = new SlashCommandBuilder()
     .setName('blacklist')
     .setDescription('Manage the blacklist')
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
+    .setDMPermission(false)
     .addSubcommand(subcommand =>
         subcommand
             .setName('remove')

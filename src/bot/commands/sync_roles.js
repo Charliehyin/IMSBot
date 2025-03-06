@@ -58,7 +58,8 @@ const sync_guild_info = async (uuid) => {
 
 const sync_roles_command = new SlashCommandBuilder()
     .setName('sync-roles')
-    .setDescription('Syncs your roles with guilds');
+    .setDescription('Syncs your roles with guilds')
+    .setDMPermission(false);
 
 const sync_roles_interaction = async (interaction, db) => {
     console.log('Syncing roles')

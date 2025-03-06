@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { embedColor } = require('../constants');
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
 const { get_uuid_from_ign } = require('../utils/get_uuid_from_ign');
 const itemsPerPage = 20;
 
@@ -8,7 +8,7 @@ const itemsPerPage = 20;
 const blacklist_command = new SlashCommandBuilder()
     .setName('blacklist')
     .setDescription('Manage the blacklist')
-    .setDefaultMemberPermissions(1099511627776)
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
     .addSubcommand(subcommand =>
         subcommand
             .setName('remove')

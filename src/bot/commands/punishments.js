@@ -1,11 +1,11 @@
 require('dotenv').config();
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
 const itemsPerPage = 8;
 
 const punishments_command = new SlashCommandBuilder()
     .setName('punishments')
     .setDescription('Manage punishments')
-    .setDefaultMemberPermissions(1099511627776)
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
     .addSubcommand(subcommand =>
         subcommand
             .setName('add')

@@ -43,7 +43,7 @@ const general_channel = '1346623017878552726';
 const punishment_log_channel = '1346625649590403162';
 
 const IMA_req = 150;
-const IMC_req = 250;
+const IMC_req = 300;
 const IMS_req = 400;
 
 const IMA_waitlist = '1346626931293945886';

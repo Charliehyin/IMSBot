@@ -43,6 +43,10 @@ const general_channel = '1346623017878552726';
 const punishment_log_channel = '1346625649590403162';
 const alerts_channel = '1346624501106081873';
 
+const ims_members_channel = '1348459267442606081';
+const imc_members_channel = '1348459500281270303';
+const ima_members_channel = '1348459567335473203';
+
 const IMA_req = 150;
 const IMC_req = 300;
 const IMS_req = 400;
@@ -98,6 +102,9 @@ module.exports = {
     general_channel, 
     punishment_log_channel,
     alerts_channel,
+    ims_members_channel,
+    imc_members_channel,
+    ima_members_channel,
     IMA_req, 
     IMC_req, 
     IMS_req, 

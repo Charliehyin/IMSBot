@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { SlashCommandBuilder } = require('discord.js');
 const { sync_roles_interaction } = require('./sync_roles');
-const { guild_id, ims_guild_id, imc_guild_id, ima_guild_id } = require('../constants');
+const { guild_id, ims_guild_id, imc_guild_id, ima_guild_id, ims_members_channel, imc_members_channel, ima_members_channel } = require('../constants');
 
 const get_guild_members = async (guild_id) => {
     const fetch = (await import('node-fetch')).default;
@@ -87,8 +87,24 @@ async function autosync_roles_all_guilds(client, db) {
         const imc_members = await get_guild_members(imc_guild_id);
         const ima_members = await get_guild_members(ima_guild_id);
 
-        const all_members = ims_members.concat(imc_members, ima_members);
         const guild = await client.guilds.fetch(guild_id);
+
+        // Update member count stat channels
+        const ims_channel = await guild.channels.fetch(ims_members_channel);
+        const imc_channel = await guild.channels.fetch(imc_members_channel);
+        const ima_channel = await guild.channels.fetch(ima_members_channel);
+
+        // Update channel names with member counts
+        try {
+            await ims_channel.setName(`IMS Members: ${ims_members.length}`);
+            await imc_channel.setName(`IMC Members: ${imc_members.length}`);
+            await ima_channel.setName(`IMA Members: ${ima_members.length}`);
+            console.log('Updated guild member count channels');
+        } catch (error) {
+            console.error('Error updating member count channels:', error);
+        }
+
+        const all_members = ims_members.concat(imc_members, ima_members);
 
         for (let member of all_members) {
             await autosync_roles(client, member, guild, db);

@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { get_uuid_from_ign } = require('../utils/get_uuid_from_ign');
 const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, PermissionFlagsBits } = require('discord.js');
-const { verified_role, embedColor } = require('../constants');
+const { verified_role, embedColor, alerts_channel } = require('../constants');
 
 const setup_verify_command = new SlashCommandBuilder()
     .setName('setup_verify')
@@ -108,7 +108,7 @@ const help_button_interaction = async (interaction) => {
     }
 }
 
-const verifyMember = async (discord_username, ign, discord_id, db) => {
+const verifyMember = async (interaction, discord_username, ign, discord_id, db) => {
     try {
         const key = process.env.HYPIXEL_API_KEY;
 
@@ -125,6 +125,22 @@ const verifyMember = async (discord_username, ign, discord_id, db) => {
         let sql = `SELECT * FROM blacklist WHERE uuid = ? AND cheater = false`;
         let [blacklist_rows] = await db.query(sql, [uuid]);
         if (blacklist_rows.length > 0) {
+            // Send a message to the alerts channel
+            try {
+                const guild = await interaction.client.guilds.fetch(interaction.guild.id);
+                const alertsChannel = await guild.channels.fetch(alerts_channel);
+                
+                const alertEmbed = new EmbedBuilder()
+                    .setColor(embedColor)
+                    .setTitle('Blacklisted User Attempted Verification')
+                    .setDescription(`**User:** <@${discord_id}> (${discord_username})\n**IGN:** ${ign}\n**UUID:** ${uuid}`)
+                    .setTimestamp();
+                
+                await alertsChannel.send({ embeds: [alertEmbed] });
+                console.log(`    Sent blacklist alert for ${discord_username} (${ign})`);
+            } catch (error) {
+                console.error('Error sending blacklist alert:', error);
+            }
             return "    You are blacklisted from this server";
         }
 
@@ -216,7 +232,7 @@ const verify_interaction = async (interaction, db, opts) => {
 
     console.log(`Verifying ${discord_username} with IGN ${ign}`)
     try {
-        verified = await verifyMember(discord_username, ign, discord_id, db);
+        verified = await verifyMember(interaction, discord_username, ign, discord_id, db);
 
         if (verified === true) {
             // Add verified role to user

@@ -114,7 +114,8 @@ const ban_interaction = async (interaction, db) => {
             },
             guildId: interaction.guildId,
             channelId: punishment_log_channel,
-            createdTimestamp: interaction.createdTimestamp
+            createdTimestamp: interaction.createdTimestamp,
+            user: interaction.user
         };
 
         // Log the punishment using the modified fakeInteraction
@@ -310,7 +311,8 @@ const punish_interaction = async (interaction, db, punishment_type) => {
                 },
                 guildId: interaction.guildId,
                 channelId: punishment_log_channel,
-                createdTimestamp: interaction.createdTimestamp
+                createdTimestamp: interaction.createdTimestamp,
+                user: interaction.user
             };
 
             // Log the punishment using the modified fakeInteraction

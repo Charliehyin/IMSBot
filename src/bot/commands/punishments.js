@@ -83,7 +83,8 @@ const punishments_interaction = async (interaction, db, subcommand) => {
                 .setColor('#FF0000')
                 .addFields(
                     { name: "Punishment", value: punishment, inline: true },
-                    { name: "Reason", value: reason, inline: true }
+                    { name: "Reason", value: reason, inline: true },
+                    { name: "Responsible Moderator", value: `<@${interaction.user.id}>`, inline: false }
                 );
 
             await interaction.reply({embeds: [embed]});

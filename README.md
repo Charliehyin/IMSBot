@@ -80,10 +80,11 @@ IMS Bot is a customized Discord Bot made to accomplish all the automation needs 
 
 * Automatic message flagging using the OpenAI moderation API
 * Guild application creation and management
-* Punishment system with automatic logging capabilities (WIP)
-* Guild blacklist system integrated with guild applications
+* Punishment system with automatic logging 
+* Guild blacklist system integrated with guild applications and verification
 * Sync Discord roles with in-game statistics and guild information
-* Verify members and flag suspicious new joins (WIP)
+* Verify members and flag suspicious new joins 
+* Automatically update member count channels
 
 This Discord bot is in ongoing development, and its features will change as the needs of IMS change over time. 
 

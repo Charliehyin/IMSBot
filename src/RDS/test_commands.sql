@@ -1,5 +1,4 @@
 USE imsbot;
 
-SELECT * FROM applications a
-WHERE a.application_status = 'open'
-ORDER BY a.time_stamp DESC;
+MODIFY TABLE guild_member_data
+ADD COLUMN farming_xp FLOAT NOT NULL;

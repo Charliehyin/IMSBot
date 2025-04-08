@@ -33,6 +33,7 @@ const fetch_specific_guild_data = async (client, db, guild_id) => {
             }
 
             let skyblockXP = 0;
+            let totalFarmingXP = 0;
             if (playerData.profiles) {
                 const profileKeys = Object.keys(playerData.profiles);
                 for (const profileKey of profileKeys) {
@@ -44,12 +45,28 @@ const fetch_specific_guild_data = async (client, db, guild_id) => {
                     console.log(`        UUID: ${member.uuid}`);
                     
                     const profileXP = playerData.profiles[profileKey].members[member.uuid].leveling.experience;
+
+                    let farmingXP = 0;
+                    let farmingXPFloat = 0;
+                    try {
+                        farmingXP = playerData.profiles[profileKey].members[member.uuid].player_data.experience.SKILL_FARMING;
+                        farmingXPFloat = parseFloat(farmingXP);
+                        console.log(`        Farming XP: ${farmingXPFloat}`);
+                    } catch (error) {
+                        // console.error(`Error fetching farming XP for player ${member.uuid}:`, error);
+                    }
                     
                     if (profileXP && profileXP > skyblockXP) {
                         skyblockXP = profileXP;
                     }
+
+                    if (farmingXPFloat > 0) {
+                        totalFarmingXP += farmingXPFloat;
+                    }
+
                     console.log(`        XP: ${skyblockXP}`);
                 }
+                console.log(`        Total Farming XP: ${totalFarmingXP}`);
                 players.push({
                     username: playerName,
                     uuid: member.uuid,

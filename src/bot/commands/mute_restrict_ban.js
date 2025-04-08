@@ -121,11 +121,12 @@ const ban_interaction = async (interaction, db) => {
         // Log the punishment using the modified fakeInteraction
         await punishments_interaction(fakeInteraction, db, 'add');
 
+        let reason_no_appeal = reason;
         if (!reason.includes(appeals_server)) {
             reason = `${reason}\n\nAppeal at: ${appeals_server}`;
         }
 
-        let reply_string = `${user} has been banned. \nReason: ${reason}`;  
+        let reply_string = `${user} has been banned. \nReason: ${reason_no_appeal}`;  
 
         // Get uuid from user's discord id from db
         let sql = `SELECT uuid FROM members WHERE discord_id = ?`;
@@ -155,7 +156,7 @@ const ban_interaction = async (interaction, db) => {
 
             // blacklist uuid
             sql = `INSERT INTO blacklist (ign, uuid, reason, cheater, time_stamp) VALUES (?, ?, ?, ?, ?)`;
-            await db.query(sql, [ign, uuid, reason, cheater, Date.now()]);
+            await db.query(sql, [ign, uuid, reason_no_appeal, cheater, Date.now()]);
             reply_string += `\n\nAlso, ${ign}(${uuid}) has been blacklisted from this server. Cheater status: ${cheater}`;
         }
 
@@ -165,7 +166,7 @@ const ban_interaction = async (interaction, db) => {
             reply_string += `\n\nAlso, failed to send DM to ${user.tag}: ${error}`;
         }
 
-        await interaction.guild.members.ban(user, { reason: reason });
+        await interaction.guild.members.ban(user, { reason: reason_no_appeal });
         await interaction.editReply(reply_string);
     } catch (error) {
         console.error('Error banning user:', error);

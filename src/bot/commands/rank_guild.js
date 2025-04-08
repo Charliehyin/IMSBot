@@ -15,7 +15,7 @@ const fetch_specific_guild_data = async (client, db, guild_id) => {
     for (const member of members) {
         try {
             // Fetch data for the player
-            const playerResponse = await fetch(`https://sky.shiiyu.moe/api/v2/profile/${member.uuid}`);
+            const playerResponse = await fetch(`https://api.hypixel.net/v2/skyblock/profiles?key=${API_KEY}&uuid=${member.uuid}`);
             const playerData = await playerResponse.json();
 
             // Query the database to get the username from UUID
@@ -42,8 +42,9 @@ const fetch_specific_guild_data = async (client, db, guild_id) => {
 
                     console.log(`        Profile: ${profileKey}`);
                     console.log(`        UUID: ${member.uuid}`);
-
-                    const profileXP = playerData.profiles[profileKey].data.skyblock_level.xp;
+                    
+                    const profileXP = playerData.profiles[profileKey].members[member.uuid].leveling.experience;
+                    
                     if (profileXP && profileXP > skyblockXP) {
                         skyblockXP = profileXP;
                     }

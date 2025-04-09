@@ -1,4 +1,3 @@
 USE imsbot;
 
-MODIFY TABLE guild_member_data
-ADD COLUMN farming_xp FLOAT NOT NULL;
+SELECT * FROM guild_member_data ORDER BY id DESC LIMIT 10;

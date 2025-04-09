@@ -70,10 +70,10 @@ const fetch_specific_guild_data = async (client, db, guild_id) => {
                 players.push({
                     username: playerName,
                     uuid: member.uuid,
-                    skyblockXP: parseInt(skyblockXP)
+                    skyblockXP: parseInt(skyblockXP),
+                    farmingXP: parseFloat(totalFarmingXP).toFixed(0)
                 });
             }
-
         } catch (error) {
             console.error(`Error fetching data for player ${member.uuid}:`, error);
         }
@@ -81,13 +81,14 @@ const fetch_specific_guild_data = async (client, db, guild_id) => {
     }
     // Add player data to the database
     const currentTimestamp = Date.now();
-    const insertQuery = 'INSERT INTO guild_member_data (guild_id, user_id, username, time_stamp, skyblock_xp) VALUES ?';
+    const insertQuery = 'INSERT INTO guild_member_data (guild_id, user_id, username, time_stamp, skyblock_xp, farming_xp) VALUES ?';
     const values = players.map(player => [
         guild_id,
         player.uuid,
         player.username,
         currentTimestamp,
-        player.skyblockXP
+        player.skyblockXP,
+        player.farmingXP
     ]);
 
     try {

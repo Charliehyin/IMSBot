@@ -447,4 +447,4 @@ const rank_guild_interaction = async (interaction, db) => {
     }
 }
 
-module.exports = { fetch_guild_data, rank_guild_command, rank_guild_interaction };
+module.exports = { fetch_guild_data, rank_guild_command, rank_guild_interaction, create_embed };

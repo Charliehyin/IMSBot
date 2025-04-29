@@ -331,7 +331,7 @@ Before joining the guild make sure that you:
 - Enable visits for both island and garden (stand on each island and enable them to guild members or anyone)
 - Ensure you keep your APIs on at all times
 - Make sure to set /mystatus online
-- Read <#930986320225005598>
+- Read <#1346649034324185170>
 - IF YOU HAVE MULTIPLE IRONMAN PROFILES - ENABLE API'S ON ALL OF THEM
 
 If you are inactive for longer than 7 days you will be kicked.
@@ -574,7 +574,11 @@ const handle_guild_notify_invited = async (interaction, db, client) => {
         let application_channel = rows[0].application_channel;
         application_channel = await client.channels.fetch(application_channel);
 
-        let notify_invited_message = `You have been invited to ${guildName}. Make sure to accept the invite. If you missed the invite, don't worry, you will receive another one. <@${userid}>`;
+        let notify_invited_message = `You have been invited to ${guildName}. 
+        
+**Make sure to accept the invite when you next log in.** 
+        
+If you missed the invite, don't worry, you will receive another one. <@${userid}>`;
 
         const dm = await member.createDM();
         dm.send(notify_invited_message);

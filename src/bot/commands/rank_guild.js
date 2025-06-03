@@ -140,7 +140,7 @@ const create_embed = async (interaction, title, description, rows) => {
                 .setStyle(ButtonStyle.Primary)
         );
 
-    const response = await interaction.reply({
+    const response = await interaction.editReply({
         embeds: [pages[currentPage]],
         components: [row],
         fetchReply: true
@@ -184,6 +184,7 @@ const rank_guild_command = new SlashCommandBuilder()
             .setDescription('statistic to rank by')
             .setRequired(true)
             .addChoices(
+                { name: 'Biweekly Skyblock XP Gain', value: 'biweekly_xp_gain' },
                 { name: 'Weekly Skyblock XP Gain', value: 'weekly_xp_gain' },
                 { name: 'Daily Guild XP', value: 'daily_gxp' },
                 { name: 'Weekly Guild XP', value: 'weekly_gxp' },
@@ -199,6 +200,7 @@ const rank_guild_command = new SlashCommandBuilder()
 
 const rank_guild_interaction = async (interaction, db) => {
     try {
+        interaction.deferReply({ ephemeral: false });
         console.log('Ranking guild: ');
         let guild = interaction.options.getString('guild');
         const statistic = interaction.options.getString('statistic');
@@ -227,29 +229,34 @@ const rank_guild_interaction = async (interaction, db) => {
             const guildData = await response.json();
 
             if (!guildData) {
-                await interaction.reply(`Failed to fetch guild data: ${guildData.cause}`);
+                await interaction.editReply(`Failed to fetch guild data: ${guildData.cause}`);
                 return;
             }
 
             if (!guildData.guild) {
-                await interaction.reply(`No guild found with the ID or name: ${guild}`);
+                await interaction.editReply(`No guild found with the ID or name: ${guild}`);
                 return;
             }
 
             console.log(`    Valid guild found: ${guildData.guild.name}`);
             
-                            
-            if (statistic === 'weekly_xp_gain') {
+            if (statistic === 'weekly_xp_gain' || statistic === 'biweekly_xp_gain') {
                 const currentTimestamp = Date.now();
-                const oneWeekAgo = currentTimestamp - 7 * 24 * 60 * 60 * 1000;
+                let start_time;
+                if (statistic === 'biweekly_xp_gain') {
+                    start_time = currentTimestamp - 14 * 24 * 60 * 60 * 1000;
+                }
+                else {
+                    start_time = currentTimestamp - 7 * 24 * 60 * 60 * 1000;
+                }
 
                 const [timestamps] = await db.query(
                     'SELECT MIN(time_stamp) as oldest_timestamp, MAX(time_stamp) as newest_timestamp FROM guild_member_data WHERE guild_id = ? AND time_stamp > ?',
-                    [guild_id, oneWeekAgo]
+                    [guild_id, start_time]
                 );
 
                 if (!timestamps[0].oldest_timestamp) {
-                    await interaction.reply('No data available for the past week.');
+                    await interaction.editReply('No data available for the past week.');
                     return;
                 }
 
@@ -413,7 +420,7 @@ const rank_guild_interaction = async (interaction, db) => {
                 );
 
                 if (rows.length === 0) {
-                    await interaction.reply(`No data found for the guild with ID: ${guild_id}`);
+                    await interaction.editReply(`No data found for the guild with ID: ${guild_id}`);
                     return;
                 }
 
@@ -433,17 +440,17 @@ const rank_guild_interaction = async (interaction, db) => {
 
                 await create_embed(interaction, 'Skyblock Level Ranking', `Ranking of ${guild} members by Skyblock Level\nUpdated <t:${parseInt(latestTimestamp/1000)}:R>\n`, memberTexts);
             } else {
-                await interaction.reply(`Invalid statistic: ${statistic}`);
+                await interaction.editReply(`Invalid statistic: ${statistic}`);
                 return;
             }
         } catch (error) {
             console.error('Error checking guild validity:', error);
-            await interaction.reply(`An error occurred while validating the guild: ${error.message}`);
+            await interaction.editReply(`An error occurred while validating the guild: ${error.message}`);
         }
 
     } catch (error) {
         console.error(error);
-        await interaction.reply(`There was an error while trying to rank the guild: ${error.message}`);
+        await interaction.editReply(`There was an error while trying to rank the guild: ${error.message}`);
     }
 }
 

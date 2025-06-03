@@ -14,7 +14,7 @@ const mute_command = new SlashCommandBuilder()
             .setRequired(true))
     .addStringOption(option =>
         option.setName('duration')
-            .setDescription('Mute duration (e.g., 1s, 1m, 1h, 1d, 1w)')
+            .setDescription('Mute duration (e.g., 1s, 1m, 1h, 1d, 1w, perm)')
             .setRequired(true))
     .addStringOption(option =>
         option.setName('reason')
@@ -255,8 +255,13 @@ const punish_interaction = async (interaction, db, punishment_type) => {
         }
 
         // Add mute to database
-        sql = 'INSERT INTO current_punishments (user_id, guild_id, end_time, reason, punishment_type) VALUES (?, ?, ?, ?, ?)';
-        await db.query(sql, [user.id, interaction.guildId, endTime, reason, punishment_type]);
+        if (duration === 'perm') {
+            console.log('   Permanent punishment applied');
+        }
+        else {
+            sql = 'INSERT INTO current_punishments (user_id, guild_id, end_time, reason, punishment_type) VALUES (?, ?, ?, ?, ?)';
+            await db.query(sql, [user.id, interaction.guildId, endTime, reason, punishment_type]);
+        }
 
         // Apply punishment role
         const member = await interaction.guild.members.fetch(user.id);
@@ -264,6 +269,7 @@ const punish_interaction = async (interaction, db, punishment_type) => {
 
         if (punishment_type === 'lfp_plus') {
             await member.roles.remove(lfp_plus_access_role)
+            await member.roles.remove(lfp_access_role)
         }
         if (punishment_type === 'lfp') {
             await member.roles.remove(lfp_access_role)
@@ -355,6 +361,9 @@ const punish_interaction = async (interaction, db, punishment_type) => {
 };
 
 function parseDuration(duration) {
+    if (duration === 'perm') {
+        return 1000 * 60 * 60 * 24 * 365 * 100; // 100 years
+    }
     const regex = /(\d+)([smhdw])/g;
     let totalMs = 0;
     let match;
@@ -423,6 +432,7 @@ async function checkExpiredPunishments(client, db) {
                 }
                 else if (punishment.punishment_type === 'lfp_plus') {
                     await member.roles.remove(lfp_plus_restricted_role);
+                    await member.roles.remove(lfp_restricted_role);
                     console.log(`Un-lfp_plus-restricted ${member.user.tag} in ${guild.name}`);
                 }
                 else if (punishment.punishment_type === 'bridge') {

@@ -34,7 +34,7 @@ const suggestion_restricted_role = '951359155917193246';
 const hos_restricted_role = '951865546998177834';
 const vc_restricted_role = '1147565266801283214';
 const lfp_restricted_role = '886724571749834753';
-const lfp_plus_restricted_role = '1227956171411820605';
+const lfp_plus_restricted_role = '1346767723962826822';
 const bridge_restricted_role = '891402639055654912';
 const xp_restricted_role = '1281754617428049951';
 

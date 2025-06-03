@@ -141,7 +141,8 @@ const create_application = async (interaction, db, client, member, ign, applicat
 
 
         // Send a message in the new channel
-        await application.send(`Welcome to your application channel, ${member}!`);
+        await application.send(`Welcome to your application channel, ${member}!
+Please note it could take up to a day to process your application. No further action is needed. `);
 
         return { applyMessage, channelId: application.id };
 

@@ -53,7 +53,7 @@ const restrict_command = new SlashCommandBuilder()
             ))
     .addStringOption(option =>
         option.setName('duration')
-            .setDescription('Restrict duration (e.g., 1s, 1m, 1h, 1d, 1w)')
+            .setDescription('Restrict duration (e.g., 1s, 1m, 1h, 1d, 1w, perm)')
             .setRequired(true))
     .addStringOption(option =>
         option.setName('reason')
@@ -268,8 +268,25 @@ const punish_interaction = async (interaction, db, punishment_type) => {
         await member.roles.add(role);
 
         if (punishment_type === 'lfp_plus') {
+            await member.roles.add(lfp_restricted_role)
             await member.roles.remove(lfp_plus_access_role)
             await member.roles.remove(lfp_access_role)
+
+            // 30 day lfp ban
+            let lfp_end_time = Date.now() + 30 * 24 * 60 * 60 * 1000;
+            let sql = 'SELECT * FROM current_punishments WHERE user_id = ? AND guild_id = ? AND punishment_type = ?';
+            const [rows] = await db.query(sql, [user.id, interaction.guildId, 'lfp']);
+            if (rows.length > 0) {
+                original_lfp_end_time = rows[0].end_time;
+                // Replace original end time with longer end time
+                if (lfp_end_time > original_lfp_end_time) {
+                    sql = 'UPDATE current_punishments SET end_time = ? WHERE id = ?';
+                    await db.query(sql, [lfp_end_time, rows[0].id]);
+                }
+            } else {
+                sql = 'INSERT INTO current_punishments (user_id, guild_id, end_time, reason, punishment_type) VALUES (?, ?, ?, ?, ?)';
+                await db.query(sql, [user.id, interaction.guildId, Date.now() + 60 * 1000, '30 day LFP ban with LFP+ ban', 'lfp']);
+            }
         }
         if (punishment_type === 'lfp') {
             await member.roles.remove(lfp_access_role)

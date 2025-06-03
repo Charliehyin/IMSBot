@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { get_uuid_from_ign } = require('../utils/get_uuid_from_ign');
 const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, PermissionFlagsBits } = require('discord.js');
-const { verified_role, embedColor, alerts_channel } = require('../constants');
+const { verified_role, embedColor, alerts_channel, cheater_role } = require('../constants');
 
 const setup_verify_command = new SlashCommandBuilder()
     .setName('setup_verify')
@@ -144,13 +144,42 @@ const verifyMember = async (interaction, discord_username, ign, discord_id, db) 
             return "    You are blacklisted from this server";
         }
 
+        // Check if member is a cheater
+        sql = `SELECT * FROM blacklist WHERE uuid = ? AND cheater = true`;
+        let cheater = false;
+        let [cheater_rows] = await db.query(sql, [uuid]);
+        if (cheater_rows.length > 0) {
+            cheater = true;
+            // Send a message to the alerts channel
+            try {
+                const guild = await interaction.client.guilds.fetch(interaction.guild.id);
+                const alertsChannel = await guild.channels.fetch(alerts_channel);
+                
+                const alertEmbed = new EmbedBuilder()
+                    .setColor(embedColor)
+                    .setTitle('Cheater Verified')
+                    .setDescription(`**User:** <@${discord_id}> (${discord_username})\n**IGN:** ${ign}\n**UUID:** ${uuid}`)
+                    .setTimestamp();
+                
+                await alertsChannel.send({ embeds: [alertEmbed] });
+                console.log(`    Sent cheater alert for ${discord_username} (${ign})`);
+
+                const cheaterRole = await guild.roles.fetch(cheater_role);
+                let member = await guild.members.fetch(discord_id);
+                await member.roles.add(cheaterRole);
+                console.log(`    Added ${cheaterRole.name} role to ${member.user.username}`);
+            } catch (error) {
+                console.error('Error sending cheater alert:', error);
+            }
+        }
+
         // Check if member exists in db
         sql = `SELECT ign FROM members WHERE discord_id = ? AND uuid = ?`;
         let [rows] = await db.query(sql, [discord_id, uuid]);
         if (rows.length > 0) {
             await db.query(`UPDATE members SET ign = ? WHERE discord_id = ?`, [ign, discord_id]);
             console.log("    Member already exists in database");
-            return true;
+            return "success" + (cheater ? " (cheater)" : "");
         }
 
         const discord_url = `https://api.hypixel.net/v2/player?key=${key}&uuid=${uuid}`;
@@ -208,7 +237,7 @@ const verifyMember = async (interaction, discord_username, ign, discord_id, db) 
                 sql = `INSERT INTO members (discord_id, ign, uuid) VALUES (?, ?, ?)`;
                 await db.query(sql, [discord_id, ign, uuid]);
             }
-            return true;
+            return "success" + (cheater ? " (cheater)" : "");
         } else {
             return `    Linked discord on Hypixel(${linked_discord}) does not match current Discord account(${discord_username})`;
         }
@@ -229,12 +258,13 @@ const verify_interaction = async (interaction, db, opts) => {
         ephemeral = false;
     }
     const discord_id = interaction.user.id;
+    interaction.deferReply({ ephemeral: ephemeral });
 
     console.log(`Verifying ${discord_username} with IGN ${ign}`)
     try {
         verified = await verifyMember(interaction, discord_username, ign, discord_id, db);
 
-        if (verified === true) {
+        if (verified.startsWith("success")) {
             // Add verified role to user
             const guild = interaction.guild;
             const role = await guild.roles.fetch(verified_role);
@@ -250,20 +280,20 @@ const verify_interaction = async (interaction, db, opts) => {
             else {
                 console.log(`    Bot hoist is lower than member hoist, skipping nickname change`);
             }
-            if (opts) {
-                await interaction.reply({ content: `Successfully verified \`${discord_username}\` with IGN \`${ign}\``, ephemeral: ephemeral });
+            if (verified.endsWith(" (cheater)")) {
+                await interaction.editReply({ content: `Successfully verified \`${discord_username}\` with IGN \`${ign}\`\n**Note:** This user is a cheater and has been added to the cheater role.`, ephemeral: ephemeral });
             } else {
-                await interaction.reply({ content: `Successfully verified \`${discord_username}\` with IGN \`${ign}\``, ephemeral: ephemeral });
+                await interaction.editReply({ content: `Successfully verified \`${discord_username}\` with IGN \`${ign}\``, ephemeral: ephemeral });
             }
         }
         else {
             console.log(`    Failed to verify ${discord_username} to ${ign} for reason: \n${verified}`)
-            await interaction.reply({ content: `Failed to verify \`${discord_username}\` to \`${ign}\` for reason: \n${verified.trim()}`, ephemeral: ephemeral });
+            await interaction.editReply({ content: `Failed to verify \`${discord_username}\` to \`${ign}\` for reason: \n${verified.trim()}`, ephemeral: ephemeral });
         }
     }
     catch (error) {
         console.error('Error verifying member:', error);
-        await interaction.reply(`There was an error while trying to verify the user: ${error.message}`);
+        await interaction.editReply(`There was an error while trying to verify the user: ${error.message}`);
     }
 }
 

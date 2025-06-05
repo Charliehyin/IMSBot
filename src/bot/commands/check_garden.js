@@ -31,6 +31,8 @@ const check_garden_command = new SlashCommandBuilder()
             ));
 
 const check_garden_interaction = async (interaction, db) => {
+    await interaction.deferReply({ ephemeral: false });
+    
     const guild = interaction.options.getString('guild');
     const timeframe = interaction.options.getString('timeframe');
 

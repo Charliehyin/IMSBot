@@ -200,7 +200,7 @@ const rank_guild_command = new SlashCommandBuilder()
 
 const rank_guild_interaction = async (interaction, db) => {
     try {
-        interaction.deferReply({ ephemeral: false });
+        await interaction.deferReply({ ephemeral: false });
         console.log('Ranking guild: ');
         let guild = interaction.options.getString('guild');
         const statistic = interaction.options.getString('statistic');

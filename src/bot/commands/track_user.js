@@ -4,10 +4,10 @@ const { embedColor, tracking_channel } = require('../constants');
 const API_KEY = process.env.HYPIXEL_API_KEY;
 const { createCanvas } = require('canvas');
 
-const fetch_user_farming_xp = async (uuid) => {
+const fetch_user_farming_xp = async (uuid, apiKey = API_KEY) => {
     try {
         const fetch = (await import('node-fetch')).default;
-        const playerResponse = await fetch(`https://api.hypixel.net/v2/skyblock/profiles?key=${API_KEY}&uuid=${uuid}`);
+        const playerResponse = await fetch(`https://api.hypixel.net/v2/skyblock/profiles?key=${apiKey}&uuid=${uuid}`);
         const playerData = await playerResponse.json();
 
         let totalFarmingXP = 0;
@@ -185,9 +185,9 @@ const process_active_tracking_sessions = async (client, db) => {
 
         for (const session of activeSessions) {
             try {
-                // Fetch current farming XP
-                const farmingXP = await fetch_user_farming_xp(session.user_id);
-
+                // Fetch current farming XP using the session's API key
+                const farmingXP = await fetch_user_farming_xp(session.user_id, session.api_key);
+                
                 console.log(`   ${session.username} has ${farmingXP} farming XP`);
                 
                 // Insert tracking data
@@ -292,6 +292,10 @@ const track_user_command = new SlashCommandBuilder()
                 { name: '12 hours', value: 12 },
                 { name: '24 hours', value: 24 }
             ))
+    .addStringOption(option =>
+        option.setName('api_key')
+            .setDescription('Hypixel API key (admins can skip this)')
+            .setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers);
 
 const track_user_interaction = async (interaction, db, client) => {
@@ -300,6 +304,24 @@ const track_user_interaction = async (interaction, db, client) => {
         
         const username = interaction.options.getString('username');
         const duration = interaction.options.getInteger('duration') * 60 * 60 * 1000; // Convert to milliseconds
+        const providedApiKey = interaction.options.getString('api_key');
+
+        // Check if user is admin
+        const isAdmin = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
+        
+        // Determine which API key to use
+        let apiKeyToUse;
+        if (isAdmin && !providedApiKey) {
+            // Admin can use bot's API key
+            apiKeyToUse = API_KEY;
+        } else if (providedApiKey) {
+            // Use provided API key
+            apiKeyToUse = providedApiKey;
+        } else {
+            // Non-admin without API key
+            await interaction.editReply('You must provide an API key to use this command. Admins can run the command without an API key.');
+            return;
+        }
 
         // Get UUID from username
         let uuid;
@@ -334,8 +356,8 @@ const track_user_interaction = async (interaction, db, client) => {
             return;
         }
 
-        // Get initial farming XP
-        const initialXP = await fetch_user_farming_xp(uuid);
+        // Get initial farming XP using the determined API key
+        const initialXP = await fetch_user_farming_xp(uuid, apiKeyToUse);
         
         // Create tracking session
         const sessionId = `${uuid}_${Date.now()}`;
@@ -345,8 +367,8 @@ const track_user_interaction = async (interaction, db, client) => {
         console.log(`   Initial XP: ${initialXP}`);
 
         await db.query(
-            'INSERT INTO active_tracking_sessions (session_id, user_id, username, start_time, end_time, channel_id) VALUES (?, ?, ?, ?, ?, ?)',
-            [sessionId, uuid, username, startTime, endTime, tracking_channel]
+            'INSERT INTO active_tracking_sessions (session_id, user_id, username, start_time, end_time, channel_id, api_key) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [sessionId, uuid, username, startTime, endTime, tracking_channel, apiKeyToUse]
         );
 
         // Insert initial data point
@@ -363,7 +385,8 @@ const track_user_interaction = async (interaction, db, client) => {
                 { name: 'Check Interval', value: '5 minutes', inline: true },
                 { name: 'Results Channel', value: `<#${tracking_channel}>`, inline: true },
                 { name: 'Starting XP', value: initialXP.toLocaleString(), inline: true },
-                { name: 'Ends', value: `<t:${Math.floor(endTime / 1000)}:R>`, inline: true }
+                { name: 'Ends', value: `<t:${Math.floor(endTime / 1000)}:R>`, inline: true },
+                { name: 'API Key', value: isAdmin && !providedApiKey ? 'Bot API Key' : 'User Provided', inline: true }
             )
             .setColor(embedColor)
             .setTimestamp();

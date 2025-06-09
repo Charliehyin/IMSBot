@@ -111,6 +111,7 @@ CREATE TABLE active_tracking_sessions (
     start_time BIGINT NOT NULL,
     end_time BIGINT NOT NULL,
     channel_id VARCHAR(32) NOT NULL,
+    api_key VARCHAR(64) NOT NULL,
     last_check BIGINT DEFAULT 0,
     INDEX (end_time),
     INDEX (session_id)

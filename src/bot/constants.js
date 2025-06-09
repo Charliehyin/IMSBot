@@ -42,6 +42,7 @@ const automod_channel = '1346625724865318912';
 const general_channel = '1346623017878552726';
 const punishment_log_channel = '1346625649590403162';
 const alerts_channel = '1346624501106081873';
+const tracking_channel = '1381410909938913310';
 
 const ims_members_channel = '1348459267442606081';
 const imc_members_channel = '1348459500281270303';
@@ -102,6 +103,7 @@ module.exports = {
     general_channel, 
     punishment_log_channel,
     alerts_channel,
+    tracking_channel,
     ims_members_channel,
     imc_members_channel,
     ima_members_channel,

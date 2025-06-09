@@ -35,6 +35,7 @@ const { mute_command, restrict_command, ban_command, ban_interaction, punish_int
 const { autosync_roles_all_guilds } = require('./src/bot/commands/autosync_roles');
 const { fetch_guild_data, rank_guild_command, rank_guild_interaction } = require('./src/bot/commands/rank_guild');
 const { check_garden_command, check_garden_interaction } = require('./src/bot/commands/check_garden');
+const { track_user_command, track_user_interaction, process_active_tracking_sessions, stop_all_tracking } = require('./src/bot/commands/track_user');
 // Create a new client instance
 const client = new Client({ 
     intents: [
@@ -69,6 +70,9 @@ client.once('ready', async () => {
     setInterval(async () => {
         fetch_guild_data(client, db);
     }, 60 * 60 * 1000); // Check every 60 minutes
+    setInterval(async () => {
+        process_active_tracking_sessions(client, db);
+    }, 5 * 60 * 1000); // Check tracking sessions every 5 minutes
     await registerSlashCommands();
 });
 
@@ -88,7 +92,8 @@ async function registerSlashCommands() {
         restrict_command,
         ban_command,
         rank_guild_command,
-        check_garden_command
+        check_garden_command,
+        track_user_command
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -151,6 +156,9 @@ client.on('interactionCreate', async interaction => {
                 break;
             case 'check_garden':
                 await check_garden_interaction(interaction, db);
+                break;
+            case 'track_user':
+                await track_user_interaction(interaction, db, client);
                 break;
         }
     } 

@@ -1,3 +1,3 @@
 USE imsbot;
 
-SELECT * FROM guild_member_data WHERE farming_xp > 0 ORDER BY id DESC;
+SELECT * FROM active_tracking_sessions;

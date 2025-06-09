@@ -92,6 +92,30 @@ CREATE TABLE guild_member_data (
     INDEX (time_stamp)
 );
 
+CREATE TABLE tracked_member_data (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(32) NOT NULL,
+    user_id VARCHAR(32) NOT NULL,
+    time_stamp BIGINT NOT NULL,
+    farming_xp FLOAT NOT NULL,
+    tracking_session_id VARCHAR(64) NOT NULL,
+    INDEX (time_stamp),
+    INDEX (tracking_session_id)
+);
+
+CREATE TABLE active_tracking_sessions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    session_id VARCHAR(64) UNIQUE NOT NULL,
+    user_id VARCHAR(32) NOT NULL,
+    username VARCHAR(32) NOT NULL,
+    start_time BIGINT NOT NULL,
+    end_time BIGINT NOT NULL,
+    channel_id VARCHAR(32) NOT NULL,
+    last_check BIGINT DEFAULT 0,
+    INDEX (end_time),
+    INDEX (session_id)
+);
+
 -- Create users
 DROP USER IF EXISTS 'imsbotdb-read-only';
 DROP USER IF EXISTS 'imsbotdb-read-write';

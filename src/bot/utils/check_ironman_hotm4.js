@@ -24,6 +24,7 @@ const check_ironman_hotm4 = async (uuid) => {
                 if (profile.game_mode !== 'ironman') {
                     continue;
                 }
+                /*
                 if (!profile.members[uuid].mining_core) {
                     console.log(`    ${uuid} does not have mining core`);
                     continue;
@@ -31,6 +32,11 @@ const check_ironman_hotm4 = async (uuid) => {
                 console.log(`    Hotm xp: ${profile.members[uuid].mining_core.experience}`);
                 if (profile.members[uuid].mining_core.experience >= 37000) {
                     console.log(`    ${uuid} has Ironman HOTM4`);
+                    return true;
+                }
+                */
+                if (profile.members[uuid].player_data.visited_modes.includes('crystal_hollows')) {
+                    console.log(`    ${uuid} has visited crystal hollows`);
                     return true;
                 }
             }

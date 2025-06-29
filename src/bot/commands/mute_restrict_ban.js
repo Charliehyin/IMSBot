@@ -79,6 +79,16 @@ const ban_command = new SlashCommandBuilder()
             .setDescription('Reason for banning')
             .setRequired(true));
 
+const unban_command = new SlashCommandBuilder()
+    .setName('unban')
+    .setDescription('Unban a user')
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
+    .setDMPermission(false)
+    .addStringOption(option =>
+        option.setName('user_id')
+            .setDescription('The user_id of the user to unban')
+            .setRequired(true));
+
 const ban_interaction = async (interaction, db) => {
     interaction.deferReply();
     const user = interaction.options.getUser('user');
@@ -174,6 +184,29 @@ const ban_interaction = async (interaction, db) => {
     } catch (error) {
         console.error('Error banning user:', error);
         interaction.editReply(`An error occurred while trying to ban the user: ${error}`);
+    }
+}
+
+const unban_interaction = async (interaction, db) => {
+    interaction.deferReply();
+    console.log('Unbanning user');
+    try {
+        const user_id = interaction.options.getString('user_id');
+        await interaction.guild.members.unban(user_id);
+
+        let sql = `DELETE FROM blacklist WHERE uuid = ? AND cheater = false`;
+        let [rows] = await db.query(sql, [user_id]);
+        if (rows.length > 0) {
+            console.log(`    User ${user_id} was removed from the blacklist.`);
+            await log_action(interaction.client, `Blacklist removed`, interaction.user, `${user_id}`, `${user_id} was removed from the blacklist.`);
+        }
+
+        console.log(`    User ${user_id} was unbanned from ${interaction.guild.name}`);
+        await interaction.editReply(`${user_id} has been unbanned from ${interaction.guild.name}`);
+        await log_action(interaction.client, `Unban`, interaction.user, `${user_id}`, `${user_id} was unbanned.`);
+    } catch (error) {
+        console.error('Error unbanning user:', error);
+        interaction.editReply(`An error occurred while trying to unban the user: ${error}`);
     }
 }
 
@@ -501,4 +534,4 @@ async function checkExpiredPunishments(client, db) {
     }
 }
 
-module.exports = { mute_command, restrict_command, ban_command, ban_interaction, punish_interaction, checkExpiredPunishments };
+module.exports = { mute_command, restrict_command, ban_command, unban_command, ban_interaction, unban_interaction, punish_interaction, checkExpiredPunishments };

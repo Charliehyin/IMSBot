@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
 const itemsPerPage = 8;
+const { log_action } = require('./log_action');
 
 const punishments_command = new SlashCommandBuilder()
     .setName('punishments')
@@ -107,6 +108,7 @@ const punishments_interaction = async (interaction, db, subcommand) => {
                 autoArchiveDuration: 1440
             });
             console.log('Thread created successfully:', thread.id);
+            await log_action(interaction.client, `${punishment} logged`, interaction.user, `${discord_id}`, `Reason: ${reason}`);
         }
         else if (subcommand === 'view' || subcommand === 'view_by_id') {
             console.log('Viewing punishments')
@@ -235,8 +237,8 @@ const punishments_interaction = async (interaction, db, subcommand) => {
             await db.query(sql, [punishment_id]);
 
             await interaction.reply(`Successfully removed punishment with ID ${punishment_id}`);
+            await log_action(interaction.client, `Removed log for ${rows[0].punishment} ${rows[0].id}`, interaction.user, `${rows[0].discord_id}`, `Original reason: ${rows[0].reason}\n${rows[0].punishment_link}`);
         }
-
 
     } catch (error) {
         console.error(error);

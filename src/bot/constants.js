@@ -1,6 +1,7 @@
 const embedColor = '#FFC3FF';
 
 const guild_id = '846530301513695272';
+const ims_bot_id = '1244019383102078976';
 
 const ims_guild_id = '63ebb4338ea8c9ed87b98d4a';
 const imc_guild_id = '60ac425a8ea8c9bb7f6da827';
@@ -43,6 +44,7 @@ const general_channel = '1346623017878552726';
 const punishment_log_channel = '1346625649590403162';
 const alerts_channel = '1346624501106081873';
 const tracking_channel = '1381410909938913310';
+const log_channel = '1388919866731266169';
 
 const ims_members_channel = '1348459267442606081';
 const imc_members_channel = '1348459500281270303';
@@ -69,6 +71,7 @@ const appeals_server = 'https://discord.gg/YJvnyrr7Mc';
 module.exports = { 
     embedColor, 
     guild_id,
+    ims_bot_id,
     ims_guild_id, 
     imc_guild_id, 
     ima_guild_id, 
@@ -104,6 +107,7 @@ module.exports = {
     punishment_log_channel,
     alerts_channel,
     tracking_channel,
+    log_channel,
     ims_members_channel,
     imc_members_channel,
     ima_members_channel,

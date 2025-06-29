@@ -1,7 +1,8 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { punishments_interaction } = require('./punishments');
-const { punishment_log_channel, lfp_access_role, lfp_plus_access_role, bridge_access_role, muted_role, restricted_role, ticket_restricted_role, flex_restricted_role, qna_restricted_role, suggestion_restricted_role, hos_restricted_role, vc_restricted_role, lfp_restricted_role, lfp_plus_restricted_role, bridge_restricted_role, xp_restricted_role, appeals_server, cheater_role } = require('../constants');
+const { ims_bot_id, punishment_log_channel, lfp_access_role, lfp_plus_access_role, bridge_access_role, muted_role, restricted_role, ticket_restricted_role, flex_restricted_role, qna_restricted_role, suggestion_restricted_role, hos_restricted_role, vc_restricted_role, lfp_restricted_role, lfp_plus_restricted_role, bridge_restricted_role, xp_restricted_role, appeals_server, cheater_role } = require('../constants');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const { log_action } = require('./log_action');
 
 const mute_command = new SlashCommandBuilder()
     .setName('mute')
@@ -115,7 +116,8 @@ const ban_interaction = async (interaction, db) => {
             guildId: interaction.guildId,
             channelId: punishment_log_channel,
             createdTimestamp: interaction.createdTimestamp,
-            user: interaction.user
+            user: interaction.user,
+            client: interaction.client
         };
 
         // Log the punishment using the modified fakeInteraction
@@ -166,6 +168,7 @@ const ban_interaction = async (interaction, db) => {
             reply_string += `\n\nAlso, failed to send DM to ${user.tag}: ${error}`;
         }
 
+        await log_action(interaction.client, `Ban`, interaction.user, `${user.id}`, `${user.tag} was banned from ${interaction.guild.name}. \nReason: ${reason_no_appeal}`);
         await interaction.guild.members.ban(user, { reason: reason_no_appeal });
         await interaction.editReply(reply_string);
     } catch (error) {
@@ -346,7 +349,8 @@ const punish_interaction = async (interaction, db, punishment_type) => {
                 guildId: interaction.guildId,
                 channelId: punishment_log_channel,
                 createdTimestamp: interaction.createdTimestamp,
-                user: interaction.user
+                user: interaction.user,
+                client: interaction.client
             };
 
             // Log the punishment using the modified fakeInteraction
@@ -355,13 +359,13 @@ const punish_interaction = async (interaction, db, punishment_type) => {
         let dm_string;
         if (punishment_type === 'mute') {
             // Reply to the original interaction in the channel where the command was run
-            dm_string = `You have been muted in ${interaction.guild.name} for ${duration}. Reason: ${reason}`;
+            dm_string = `You have been muted in ${interaction.guild.name} for ${duration}. \nReason: ${reason}`;
         }
         else if (punishment_type === 'restrict') {
-            dm_string = `You have been restricted in ${interaction.guild.name} for ${duration}. Reason: ${reason}`;
+            dm_string = `You have been restricted in ${interaction.guild.name} for ${duration}. \nReason: ${reason}`;
         }
         else {
-            dm_string = `You have been ${punishment_type} restricted in ${interaction.guild.name} for ${duration}. Reason: ${reason}`;
+            dm_string = `You have been ${punishment_type} restricted in ${interaction.guild.name} for ${duration}. \nReason: ${reason}`;
         }
         try {
             await user.send(dm_string);
@@ -370,15 +374,20 @@ const punish_interaction = async (interaction, db, punishment_type) => {
         }
 
         let punishment_string;
+        let punishment_type_string;
         if (punishment_type === 'mute') {
-            punishment_string = `**${interaction.user}** muted <@${user.id}> for ${duration}. Reason: ${reason}`;
+            punishment_string = `**${interaction.user}** muted <@${user.id}> for ${duration}. \nReason: ${reason}`;
+            punishment_type_string = 'Mute';
         }
         else if (punishment_type === 'restrict') {
-            punishment_string = `**${interaction.user}** restricted <@${user.id}> for ${duration}. Reason: ${reason}`;
+            punishment_string = `**${interaction.user}** restricted <@${user.id}> for ${duration}. \nReason: ${reason}`;
+            punishment_type_string = 'Restrict';
         }
         else {
-            punishment_string = `**${interaction.user}** ${punishment_type} restricted <@${user.id}> for ${duration}. Reason: ${reason}`;
+            punishment_string = `**${interaction.user}** ${punishment_type} restricted <@${user.id}> for ${duration}. \nReason: ${reason}`;
+            punishment_type_string = punishment_type + ' restricted';
         }
+        await log_action(interaction.client, `${punishment_type_string}`, interaction.user, `${user.id}`, punishment_string);
         await interaction.editReply(punishment_string);
 
     } catch (error) {
@@ -472,6 +481,18 @@ async function checkExpiredPunishments(client, db) {
                 else {
                     console.log(`Unknown punishment type: ${punishment.punishment_type}`);
                 }
+                let punishment_type_string;
+                if (punishment.punishment_type === 'mute') {
+                    punishment_type_string = 'mute';
+                }
+                else if (punishment.punishment_type === 'restrict') {
+                    punishment_type_string = 'restrict';
+                }
+                else {
+                    punishment_type_string = punishment.punishment_type + ' restricted';
+                }
+                ims_bot_user = await client.users.fetch(ims_bot_id);
+                await log_action(client, `Un-${punishment_type_string}`, ims_bot_user, rows[0].user_id, `${member.user.tag} was un-${punishment_type_string} in ${guild.name}. \nOriginal reason: ${punishment.reason}`);
             }
         } catch (error) {
             console.error('Error removing punishment from user:', error);

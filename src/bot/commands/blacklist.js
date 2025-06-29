@@ -3,6 +3,7 @@ const { embedColor } = require('../constants');
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
 const { get_uuid_from_ign } = require('../utils/get_uuid_from_ign');
 const itemsPerPage = 20;
+const { log_action } = require('./log_action');
 
 // Create the main command
 const blacklist_command = new SlashCommandBuilder()
@@ -77,6 +78,7 @@ const blacklist_interaction = async (interaction, db) => {
             console.log(`    User added to blacklist`)
 
             await interaction.reply(`User ${ign} has been blacklisted for reason: ${reason}. Cheater status: ${cheater}`);
+            await log_action(interaction.client, `Blacklist`, interaction.user, `${uuid}`, `User ${ign} has been blacklisted for reason: ${reason}. Cheater status: ${cheater}`);
         } 
         else if (subcommand === 'remove') {
             console.log('Removing user from blacklist')
@@ -110,6 +112,7 @@ const blacklist_interaction = async (interaction, db) => {
             console.log(`    User removed from blacklist`)
 
             await interaction.reply(`User ${ign_uuid} has been removed from the blacklist.`);
+            await log_action(interaction.client, `Blacklist`, interaction.user, `${uuid}`, `User ${ign_uuid} has been removed from the blacklist.`);
         }
         else if (subcommand === 'search') {
             console.log('Searching blacklist')

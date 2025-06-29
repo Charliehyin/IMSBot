@@ -78,7 +78,7 @@ const check_garden_interaction = async (interaction, db) => {
         );
 
         if (!timestamps || timestamps.length === 0) {
-            await interaction.reply(`No data available for the selected timeframe (${timeframe}).`);
+            await interaction.editReply(`No data available for the selected timeframe (${timeframe}).`);
             return;
         }
 
@@ -95,7 +95,7 @@ const check_garden_interaction = async (interaction, db) => {
         const startTimestamp = oldestTimestampResult[0].oldest_timestamp;
         
         if (!startTimestamp) {
-            await interaction.reply(`No data available for the selected timeframe (${timeframe}).`);
+            await interaction.editReply(`No data available for the selected timeframe (${timeframe}).`);
             return;
         }
 
@@ -155,6 +155,14 @@ const check_garden_interaction = async (interaction, db) => {
             return b.farming_xp_gain - a.farming_xp_gain;
         });
 
+        // Remove members with zero or negative farming XP gain
+        memberFarmingXPGains = memberFarmingXPGains.filter(member => member.farming_xp_gain > 0);
+
+        if (memberFarmingXPGains.length === 0) {
+            await interaction.editReply(`No members with farming XP gain found. \nEarliest update <t:${parseInt(startTimestamp/1000)}:R>\nLatest update <t:${parseInt(endTimestamp/1000)}:R>`);
+            return;
+        }
+
         // Create an array of text for each member, displaying username and farming XP gain
         const memberTexts = memberFarmingXPGains.map((member, index) => {
             return `${index + 1}\\. \`${member.username}\` - ${typeof member.farming_xp_gain === 'number' ? member.farming_xp_gain.toLocaleString() : member.farming_xp_gain} ${member.currently_active ? ':green_circle:' : ':red_circle:'}\n`;
@@ -163,7 +171,7 @@ const check_garden_interaction = async (interaction, db) => {
         await create_embed(interaction, 'Farming XP Gain', `Ranking of ${guild} members by Farming XP Gain\nLatest update <t:${parseInt(endTimestamp/1000)}:R>\nEarliest update <t:${parseInt(startTimestamp/1000)}:R>\n`, memberTexts);
     } catch (error) {
         console.error('Error processing check garden', error);
-        await interaction.reply('An error occurred while processing the check garden data.');
+        await interaction.editReply('An error occurred while processing the check garden data.');
         return;
     }
 };

@@ -2,7 +2,8 @@ require('dotenv').config();
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const { embedColor, tracking_channel } = require('../constants');
 const API_KEY = process.env.HYPIXEL_API_KEY;
-const { createCanvas } = require('canvas');
+const { registerFont, createCanvas } = require("canvas");
+const path = require("path");
 
 const fetch_user_farming_xp = async (uuid, apiKey = API_KEY) => {
     try {
@@ -240,6 +241,7 @@ const complete_tracking_session = async (client, db, session) => {
 
         if (sessionData.length > 0) {
             // Generate graph
+            registerFont(path.join(__dirname, "..", "..", "..", "fonts", "arial.ttf"), {family: "Arial",});
             const graphBuffer = await create_farming_xp_graph(sessionData);
             const attachment = new AttachmentBuilder(graphBuffer, { name: 'farming_xp_graph.png' });
 

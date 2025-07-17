@@ -26,6 +26,7 @@ class DiscordHandler {
         if (msg.author.bot) return;
 
         let targetGuild = null;
+        let combinedBridgeEnabled = false;
         if (msg.channel.id === channelIds.IMS) {
             targetGuild = 'IMS';
         } else if (msg.channel.id === channelIds.IMA) {
@@ -33,11 +34,13 @@ class DiscordHandler {
         } else if (msg.channel.id === channelIds.IMC) {
             targetGuild = 'IMC';
         } else if (msg.channel.id !== channelIds.COMBINED) {
+            combinedBridgeEnabled = true;
+        } else {
             return;
         }
 
         const displayName = msg.member?.displayName || msg.author.username;
-        const messageToSend = { from: 'discord', msg: `${displayName}: ${msg.content}` };
+        const messageToSend = { from: 'discord', msg: `${displayName}: ${msg.content}`, combinedbridge: combinedBridgeEnabled};
 
         this.wsServer.send_to_minecraft(messageToSend, targetGuild);
     }

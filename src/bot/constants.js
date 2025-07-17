@@ -66,11 +66,11 @@ const IMS_application_category = '1346629255118717121';
 const IMC_application_category = '1346629292834033795';
 const IMA_application_category = '1346629323213373560';
 
-const IMS_bridge_channel = '1395097036101255268';
-const IMC_bridge_channel = '1395097056254885928';
-const IMA_bridge_channel = '1395097090434273312';
-const Combined_bridge_channel = '1395097157912101056';
-const Key_generation_channel = '1395097248945406104';
+const IMS_bridge_channel = 'xxxxxxxxxxxxxxxxxxxxx';
+const IMC_bridge_channel = 'xxxxxxxxxxxxxxxxxxxxx';
+const IMA_bridge_channel = 'xxxxxxxxxxxxxxxxxxxxx';
+const Combined_bridge_channel = 'xxxxxxxxxxxxxxxxxxxxx';
+const Key_generation_channel = 'xxxxxxxxxxxxxxxxxxxxx';
 
 const WS_PORT = 3000;
 

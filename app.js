@@ -14,7 +14,7 @@ const {
     verify_button_interaction,
     help_button_interaction
 } = require('./src/bot/commands/verify');
-const { WebSocketServer }  = require('./src/bot/bridge/WebSocketServer');
+const { WebSocketServer }  = require('./src/bot/bridge/web_socket_server');
 const { DiscordHandler }   = require('./src/bot/bridge/discord_handler');
 const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_roles');
 const { 
@@ -47,7 +47,7 @@ const { autosync_roles_all_guilds } = require('./src/bot/commands/autosync_roles
 const { fetch_guild_data, rank_guild_command, rank_guild_interaction } = require('./src/bot/commands/rank_guild');
 const { check_garden_command, check_garden_interaction } = require('./src/bot/commands/check_garden');
 const { track_user_command, track_user_interaction, process_active_tracking_sessions, stop_all_tracking } = require('./src/bot/commands/track_user');
-const { bridgekey_command, deactivate_command, bridgekey_interaction, deactivate_interaction } = require('./src/bot/commands/bridge_commands');
+const { bridge_key_command, deactivate_bridge_key_command, bridgekey_interaction, deactivate_interaction } = require('./src/bot/commands/bridge_commands');
 // Create a new client instance
 const client = new Client({ 
     intents: [
@@ -87,7 +87,7 @@ client.once('ready', async () => {
     }, 5 * 60 * 1000); // Check tracking sessions every 5 minutes
     
     // Bridge Websocket Start
-    const wsServer = new WebSocketServer(WS_PORT || 3000);
+    const wsServer = new WebSocketServer({ port: WS_PORT || 3000, db, client });
     const channelIds = {
         IMS: IMS_bridge_channel,
         IMC: IMC_bridge_channel,
@@ -118,8 +118,8 @@ async function registerSlashCommands() {
         rank_guild_command,
         check_garden_command,
         track_user_command,
-        bridgekey_command,
-        deactivate_command
+        bridge_key_command,
+        deactivate_bridge_key_command
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);

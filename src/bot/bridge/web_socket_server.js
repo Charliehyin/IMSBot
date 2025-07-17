@@ -70,7 +70,7 @@ class WebSocketServer extends EventEmitter {
             console.log('[WS] Client connected, awaiting authentication…');
             const authTimeout = setTimeout(() => {
                 ws.close(1008, 'Auth timeout');
-                }, 2000);
+                }, 10000);
 
             ws.authTimeout = authTimeout;
 

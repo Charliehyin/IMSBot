@@ -88,6 +88,7 @@ client.once('ready', async () => {
     
     // Bridge Websocket Start
     const wsServer = new WebSocketServer({ port: WS_PORT || 3000, db, client });
+    client.wsServer = wsServer;
     const channelIds = {
         IMS: IMS_bridge_channel,
         IMC: IMC_bridge_channel,

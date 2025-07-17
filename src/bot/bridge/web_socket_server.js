@@ -69,9 +69,9 @@ class WebSocketServer extends EventEmitter {
         this.wss.on('connection', ws => {
             console.log('[WS] Client connected, awaiting authentication…');
             const authTimeout = setTimeout(() => {
-                console.log('[WS] Authentication timeout');
                 ws.close(1008, 'Auth timeout');
-            }, 10000);
+                }, 2000);
+
             ws.authTimeout = authTimeout;
 
             ws.on('message', data => {
@@ -90,28 +90,50 @@ class WebSocketServer extends EventEmitter {
     // Authenticates client based on bridge key in first message
     handle_authentication(ws, data) {
         let obj;
-        try { obj = JSON.parse(data); } catch (e) {
-            console.log('[Auth] Invalid JSON during auth');
-            ws.close(1008, 'Bad JSON');
-            return;
+        try {
+            obj = JSON.parse(data);
+        } catch {
+            return ws.close(1008, 'Bad JSON');
         }
-        if (obj.from === 'mc' && obj.key) {
-            const user = this.validKeys.get(obj.key);
-            if (user) {
-                clearTimeout(ws.authTimeout);
-                this.authenticatedSockets.set(ws, user);
-                console.log(`[Auth] Auth success: ${user.minecraft_name} from ${user.guild_name}`);
-                ws.send(JSON.stringify({ from: 'server', type: 'auth_success', message: 'Authenticated' }));
-                this.emit('clientConnected', this.authenticatedSockets.size);
-            } else {
-                console.log(`[Auth] Invalid key: ${obj.key}`);
-                ws.send(JSON.stringify({ from: 'server', type: 'auth_failed', message: 'Invalid key' }));
-                ws.close(1008, 'Invalid key');
+
+        if (obj.from !== 'mc' || typeof obj.key !== 'string') {
+            return ws.close(1008, 'Bad auth format');
+        }
+
+        const user = this.validKeys.get(obj.key);
+        if (!user) {
+            ws.send(JSON.stringify({ from:'server', type:'auth_failed', message:'Invalid bridge key' }));
+            return ws.close(1008, 'Invalid bridge key');
+        }
+
+        clearTimeout(ws.authTimeout);
+
+        for (const [otherWs, otherUser] of this.authenticatedSockets) {
+            if (otherUser.key === obj.key) {
+            otherWs.send(JSON.stringify({
+                from: 'server',
+                type: 'connection_replaced',
+                message: 'Another client took over this key.'
+            }));
+            otherWs.close(1000, 'Replaced by new connection');
+            this.authenticatedSockets.delete(otherWs);
             }
-        } else {
-            console.log('[Auth] Improper auth format');
-            ws.close(1008, 'Bad auth format');
         }
+
+        ws.bridgeKey = obj.key;
+        this.authenticatedSockets.set(ws, {
+            minecraft_name: user.minecraft_name,
+            guild_name:    user.guild_name,
+            key:           obj.key
+        });
+
+        console.log(`[Auth] Auth success: ${user.minecraft_name} from ${user.guild_name}`);
+        ws.send(JSON.stringify({
+            from: 'server',
+            type: 'auth_success',
+            message: 'Authenticated'
+        }));
+        this.emit('clientConnected', this.authenticatedSockets.size);
     }
 
     // Processes subsequent Minecraft messages after auth
@@ -125,6 +147,29 @@ class WebSocketServer extends EventEmitter {
             const user = this.authenticatedSockets.get(ws);
             const cleaned = this.clean_message(obj.msg);
             this.emit('minecraftMessage', { message: cleaned, guild: user.guild_name, player: user.minecraft_name });
+        }
+    }
+
+    handle_disconnect(ws) {
+        if (ws.authTimeout) {
+            clearTimeout(ws.authTimeout);
+        }
+        if(this.authenticatedSockets.has(ws)) {
+            const userData = this.authenticatedSockets.get(ws);
+            this.authenticatedSockets.delete(ws);
+            console.log(`[WS] Authenticated client disconnected: ${userData.minecraft_name} (${userData.guild_name}). Total clients: ${this.authenticatedSockets.size}`);
+            this.emit('clientDisconnected', this.authenticatedSockets.size);
+        } else {
+            console.log('[WS] Unauthenticated client disconnected');
+        }
+    }
+
+    handle_error(ws, error) {
+        console.error('[WS] WebSocket error:', error);
+        if (ws.authTimeout) clearTimeout(ws.authTimeout);
+        if (this.authenticatedSockets.has(ws)) {
+            this.authenticatedSockets.delete(ws);
+            this.emit('clientDisconnected', this.authenticatedSockets.size);
         }
     }
 
@@ -175,6 +220,18 @@ class WebSocketServer extends EventEmitter {
     // Public method to reload valid keys from DB
     async reload_valid_keys() {
         await this.load_valid_keys();
+        
+        for (const [ws] of this.authenticatedSockets) {
+            if (!this.validKeys.has(ws.bridgeKey)) {
+                // let the client know why…
+                ws.send(JSON.stringify({
+                    from: 'server',
+                    type: 'auth_revoked',
+                    message: 'Your bridge key has been revoked; disconnecting.'
+                }));
+                ws.close(1008, 'Key revoked');
+            }
+        }
     }
 }
 

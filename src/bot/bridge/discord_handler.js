@@ -34,7 +34,7 @@ class DiscordHandler {
         const messageToSend = { from: 'discord', msg: `${displayName}: ${msg.content}` };
 
         this.wsServer.send_to_minecraft(messageToSend, targetGuild);
-        console.log(`[Discord] forwarded to ${targetGuild}:`, messageToSend);
+        console.log(`[Discord] Forwarded to ${targetGuild || 'All Guilds'}:`, messageToSend);
     }
 
     // Sends Minecraft chat messages to the appropriate Discord channels
@@ -79,4 +79,4 @@ class DiscordHandler {
     }
 }
 
-module.exports = { DiscordHandler };
+exports.DiscordHandler = DiscordHandler;

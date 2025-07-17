@@ -46,10 +46,9 @@ class WebSocketServer extends EventEmitter {
                         FROM guild_member_data
                         GROUP BY user_id
                     )
-                ) AS latest ON latest.user_id = m.discord_id
+                ) AS latest ON latest.user_id = m.uuid
             `);
             if (!rows.length) {
-                console.log(`[Auth] No guild members found`);
                 return;
             }
 
@@ -58,7 +57,6 @@ class WebSocketServer extends EventEmitter {
                 const guild_name = GUILD_NAME_MAP[guild_id] || guild_id;
                 this.validKeys.set(bridge_key, { minecraft_name, guild_name });
             }
-            console.log(`[Auth] Loaded ${this.validKeys.size} valid bridge keys`);
         } catch (err) {
             console.error('[Auth] Error loading valid keys:', err);
         }
@@ -67,7 +65,6 @@ class WebSocketServer extends EventEmitter {
     // Registers handlers for new connections and their messages
     setup_event_handlers() {
         this.wss.on('connection', ws => {
-            console.log('[WS] Client connected, awaiting authentication…');
             const authTimeout = setTimeout(() => {
                 ws.close(1008, 'Auth timeout');
                 }, 10000);
@@ -155,9 +152,7 @@ class WebSocketServer extends EventEmitter {
             clearTimeout(ws.authTimeout);
         }
         if(this.authenticatedSockets.has(ws)) {
-            const userData = this.authenticatedSockets.get(ws);
             this.authenticatedSockets.delete(ws);
-            console.log(`[WS] Authenticated client disconnected: ${userData.minecraft_name} (${userData.guild_name}). Total clients: ${this.authenticatedSockets.size}`);
             this.emit('clientDisconnected', this.authenticatedSockets.size);
         } else {
             console.log('[WS] Unauthenticated client disconnected');
@@ -214,6 +209,7 @@ class WebSocketServer extends EventEmitter {
                 counts[user.guild_name] = (counts[user.guild_name] || 0) + 1;
             }
         });
+        counts['COMBINED'] = this.authenticatedSockets.size;
         return counts;
     }
 

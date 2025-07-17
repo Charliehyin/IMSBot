@@ -14,7 +14,7 @@ const dbPool = mysql.createPool({
 	database: process.env.DB_NAME,
 });
 
-/** Updates a user's record with a new bridge key */
+// Updates a user's record with a new bridge key
 async function save_bridge_key(discordId, bridgeKey) {
 	try {
     	await dbPool.query(
@@ -28,7 +28,7 @@ async function save_bridge_key(discordId, bridgeKey) {
   	}
 }
 
-/** Clears a user's bridge key, revoking access */
+// Clears a user's bridge key, revoking access
 async function delete_bridge_key(discordId) {
   	try {
    		await dbPool.query(
@@ -56,7 +56,7 @@ const deactivate_bridge_key_command = new SlashCommandBuilder()
   	)
   	.setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers);
 
-/** Handles /bridgekey: generates or returns existing key and DMs user */
+// Handles /bridgekey: generates or returns existing key and DMs user
 async function bridgekey_interaction(interaction) {
   	if (interaction.channelId !== keyGenerationChannel) {
     	return interaction.reply({ content: '❌ Run this in the key-generation channel.', ephemeral: true });
@@ -94,8 +94,7 @@ async function bridgekey_interaction(interaction) {
 	}
 }
 
-/** Handles /deactivate: revokes a user's bridge key if caller is moderator */
-
+// Handles /deactivate: revokes a user's bridge key if caller is moderator
 async function deactivate_interaction(interaction) {
 	const targetUser = interaction.options.getUser('user');
 	await delete_bridge_key(targetUser.id);

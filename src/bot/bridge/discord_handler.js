@@ -1,10 +1,16 @@
 const { EmbedBuilder } = require('discord.js');
+const { IMS_bridge_channel, IMC_bridge_channel, IMA_bridge_channel, Combined_bridge_channel} = require('../constants');
 
+const channelIds = {
+    IMS: IMS_bridge_channel,
+    IMC: IMC_bridge_channel,
+    IMA: IMA_bridge_channel,
+    COMBINED: Combined_bridge_channel
+};
 class DiscordHandler {
     // Initializes handler with Discord client, channel IDs, and WS server
-    constructor(client, channelIds, wsServer) {
+    constructor(client, wsServer) {
         this.client = client;
-        this.channelIds = channelIds;
         this.wsServer = wsServer;
         this.setup_event_handlers();
     }
@@ -20,13 +26,13 @@ class DiscordHandler {
         if (msg.author.bot) return;
 
         let targetGuild = null;
-        if (msg.channel.id === this.channelIds.IMS) {
+        if (msg.channel.id === channelIds.IMS) {
             targetGuild = 'IMS';
-        } else if (msg.channel.id === this.channelIds.IMA) {
+        } else if (msg.channel.id === channelIds.IMA) {
             targetGuild = 'IMA';
-        } else if (msg.channel.id === this.channelIds.IMC) {
+        } else if (msg.channel.id === channelIds.IMC) {
             targetGuild = 'IMC';
-        } else if (msg.channel.id !== this.channelIds.COMBINED) {
+        } else if (msg.channel.id !== channelIds.COMBINED) {
             return;
         }
 
@@ -34,7 +40,6 @@ class DiscordHandler {
         const messageToSend = { from: 'discord', msg: `${displayName}: ${msg.content}` };
 
         this.wsServer.send_to_minecraft(messageToSend, targetGuild);
-        console.log(`[Discord] Forwarded to ${targetGuild || 'All Guilds'}:`, messageToSend);
     }
 
     // Sends Minecraft chat messages to the appropriate Discord channels
@@ -52,15 +57,13 @@ class DiscordHandler {
             .setFooter({ text: `Received from: ${player}` });
 
         // Send embed to the guild-specific channel
-        const guildChannel = await this.client.channels.fetch(this.channelIds[guild]);
+        const guildChannel = await this.client.channels.fetch(channelIds[guild]);
         await guildChannel.send({ embeds: [embed] });
-        console.log(`[Discord] sent embed to [${guild}] from ${player}:`, message);
 
         // Also send embed to the combined channel if configured
-        if (this.channelIds.COMBINED) {
-            const combinedChannel = await this.client.channels.fetch(this.channelIds.COMBINED);
+        if (channelIds.COMBINED) {
+            const combinedChannel = await this.client.channels.fetch(channelIds.COMBINED);
             await combinedChannel.send({ embeds: [embed] });
-            console.log(`[Discord] also sent embed to combined channel`);
         }
     }
 

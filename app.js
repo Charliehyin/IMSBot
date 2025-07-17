@@ -16,15 +16,12 @@ const {
 } = require('./src/bot/commands/verify');
 const { WebSocketServer }  = require('./src/bot/bridge/web_socket_server');
 const { DiscordHandler }   = require('./src/bot/bridge/discord_handler');
+const { update_online_player_counts }   = require('./src/bot/bridge/bridge_counter');
 const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_roles');
 const { 
     guild_id, 
     automod_channel, 
-    general_channel, 
-    IMS_bridge_channel, 
-    IMC_bridge_channel, 
-    IMA_bridge_channel, 
-    Combined_bridge_channel,
+    general_channel,
     WS_PORT
 } = require('./src/bot/constants');
 const { blacklist_command, blacklist_interaction } = require('./src/bot/commands/blacklist');
@@ -89,13 +86,10 @@ client.once('ready', async () => {
     // Bridge Websocket Start
     const wsServer = new WebSocketServer({ port: WS_PORT || 3000, db, client });
     client.wsServer = wsServer;
-    const channelIds = {
-        IMS: IMS_bridge_channel,
-        IMC: IMC_bridge_channel,
-        IMA: IMA_bridge_channel,
-        COMBINED: Combined_bridge_channel
-    };
-    new DiscordHandler(client, channelIds, wsServer);
+    new DiscordHandler(client, wsServer);  
+    setInterval(async () => {
+        update_online_player_counts(client, wsServer);
+    }, 5 * 60 * 1000); // Check number of active websocket connections for each guild every 5 mins
     // Bridge End
     await registerSlashCommands();
 });

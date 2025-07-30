@@ -137,13 +137,50 @@ class WebSocketServer extends EventEmitter {
     handle_minecraft_message(ws, data) {
         let obj;
         try { obj = JSON.parse(data); } catch (e) {
-            console.log('[WS] Invalid JSON');
             return;
         }
-        if (obj.from === 'mc' && obj.msg && this.is_unique_guild_msg(obj.msg)) {
-            const user = this.authenticatedSockets.get(ws);
+        const user = this.authenticatedSockets.get(ws);
+        if (obj.request) {
+            this.handle_client_command_request(obj, user)
+            return;
+        }
+        if (obj.from === 'mc' && obj.msg && this.is_unique_guild_msg(obj.msg) && !obj.combinedbridge) {
             const cleaned = this.clean_message(obj.msg);
             this.emit('minecraftMessage', { message: cleaned, guild: user.guild_name, player: user.minecraft_name });
+        } else if (obj.combinedbridge == true && obj.msg){
+                this.emit('minecraftBounce', {
+                    msg: obj.msg,
+                    player: user.minecraft_name,
+                    combinedbridge: true,
+                    guild: user.guild_name
+                });
+                this.emit('minecraftMessage', {
+                    message: obj.msg,
+                    player: user.minecraft_name,
+                    combinedbridge: true,
+                    guild: user.guild_name
+                })
+        }
+    }
+
+    handle_client_command_request(obj, user) {
+        const request = obj.request
+        let response = {}
+        switch (request) {
+            case 'getOnlinePlayers':
+                response = this.get_connected_players_by_guild()
+                break;
+            default:
+                console.warn(`[ClientRequest] Unknown request: ${request}`);
+        }
+        try {
+            const responseMessage = {
+                    request: request,
+                    response: response
+                }
+            this.send_to_minecraft(responseMessage, null, user.minecraft_name);
+        } catch (err) {
+            console.error('[ClientRequest]: ', err);
         }
     }
 
@@ -170,7 +207,7 @@ class WebSocketServer extends EventEmitter {
 
     // Removes duplicates and old messages for guild chat
     is_unique_guild_msg(msg) {
-        const key = this.clean_message(msg).toLowerCase();
+        const key = this.clean_message(msg).replace(/\s+/g, ' ').toLowerCase();
         if (this.lastGuildMsgs.includes(key)) return false;
         this.lastGuildMsgs.push(key);
         if (this.lastGuildMsgs.length > 100) this.lastGuildMsgs.shift();
@@ -179,21 +216,26 @@ class WebSocketServer extends EventEmitter {
 
     // Helper to strip formatting codes from messages
     clean_message(msg) {
-        return msg.replace(/\[[^\]]+\]\s*/g, '')
-                  .replace(/§\w/g, '')
-                  .replace(/^Guild\s?>?\s?/, '')
-                  .replace(/[♲♻️♾️✨★☆♠♣♥♦✓✔︎•·●○◉◎★☆¤§©®™✓☑️❌➤➔→←↑↓↔↕]/g, '')
-                  .trim();
+        return msg.replace(/\[[^\]]+\]\s*/g, '') // remove [RANK], [DIVINE], etc.
+                .replace(/§\w/g, '') // remove formatting codes
+                .replace(/^Guild\s?>?\s?/, '') // remove "Guild > "
+                .replace(/[♲⚒♻️♾️✨★☆♠♣♥♦✓✔︎•·●○◉◎★☆¤§©®™✓☑️❌➤➔→←↑↓↔↕]/g, '')
+                .trim();
     }
 
     // Broadcasts a message to Minecraft clients, optionally by guild
-    send_to_minecraft(message, targetGuild = null) {
+    send_to_minecraft(message, targetGuild = null, targetPlayer = null) {
         const payload = JSON.stringify(message);
         this.authenticatedSockets.forEach((user, sock) => {
-            if (sock.readyState === WebSocket.OPEN && (!targetGuild || user.guild_name === targetGuild)) {
+            if (sock.readyState === WebSocket.OPEN && (!targetGuild || user.guild_name === targetGuild)&& (targetPlayer === null || user.minecraft_name === targetPlayer)) {
                 sock.send(payload);
             }
         });
+    }
+
+    send_online_players(obj, user) {
+        const onlinePlayers = this.getConnectedClientsByGuild()[1];
+        
     }
 
     // Returns current count of connected clients
@@ -211,6 +253,28 @@ class WebSocketServer extends EventEmitter {
         });
         counts['COMBINED'] = this.authenticatedSockets.size;
         return counts;
+    }
+
+    
+    // Returns counts of players per guild
+    get_connected_players_by_guild() {
+        const guilds = ["Ironman Sweats", "Ironman Casuals", "Ironman Academy"];
+        const playersByGuild = {};
+        guilds.forEach(guild => {
+            playersByGuild[guild] = [];
+        });
+        const displayNames = {
+            IMS: 'Ironman Sweats',
+            IMA: 'Ironman Academy',
+            IMC: 'Ironman Casuals'
+        };
+        this.authenticatedSockets.forEach((user, sock) => {
+            if (sock.readyState === WebSocket.OPEN) {
+                const guild_name = displayNames[user.guild_name];
+                playersByGuild[guild_name].push(user.minecraft_name);
+            }
+        });
+        return playersByGuild;
     }
 
     // Public method to reload valid keys from DB

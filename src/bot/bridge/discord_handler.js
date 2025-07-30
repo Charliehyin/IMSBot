@@ -19,6 +19,7 @@ class DiscordHandler {
     setup_event_handlers() {
         this.client.on('messageCreate', msg => this.handle_discord_message(msg));
         this.wsServer.on('minecraftMessage', data => this.send_minecraft_message_to_discord(data));
+        this.wsServer.on('minecraftBounce', data => this.bounce_minecraft_message(data));
     }
 
     // Processes incoming Discord messages and forwards them to Minecraft
@@ -33,40 +34,82 @@ class DiscordHandler {
             targetGuild = 'IMA';
         } else if (msg.channel.id === channelIds.IMC) {
             targetGuild = 'IMC';
-        } else if (msg.channel.id !== channelIds.COMBINED) {
+        } else if (msg.channel.id === channelIds.COMBINED) {
             combinedBridgeEnabled = true;
         } else {
             return;
         }
 
         const displayName = msg.member?.displayName || msg.author.username;
-        const messageToSend = { from: 'discord', msg: `${displayName}: ${msg.content}`, combinedbridge: combinedBridgeEnabled};
+        const messageToSend = { from: 'discord', msg: `${displayName}: ${msg.content}`, combinedbridge: combinedBridgeEnabled, guild: targetGuild};
 
         this.wsServer.send_to_minecraft(messageToSend, targetGuild);
     }
 
-    // Sends Minecraft chat messages to the appropriate Discord channels
-    async send_minecraft_message_to_discord({ guild, player, message }) {
-        const validGuilds = ['IMS', 'IMC', 'IMA'];
-        if (!validGuilds.includes(guild)) {
-            console.warn(`[Discord] unknown guild: ${guild}`);
-            return;
+    bounce_minecraft_message(data) {
+        try {
+            const { msg, player, combinedbridge, guild } = data;
+            
+            const displayNames = {
+                IMS: 'Ironman Sweats',
+                IMA: 'Ironman Academy',
+                IMC: 'Ironman Casuals'
+            };
+            const guild_name = displayNames[guild];
+            const messageToBounce = {
+                from: 'mc',
+                msg: player + ": " + msg,
+                combinedbridge: combinedbridge,
+                fromplayer: player,
+                guild: guild_name
+            };
+            
+            this.wsServer.send_to_minecraft(messageToBounce, null, null);
+
+        } catch (err) {
+            console.error('[MC] Bounce error:', err);
         }
+    }
 
-        const embed = new EmbedBuilder()
-            .setTitle(`[${guild}]`)
-            .setColor(this.get_guild_color(guild))
-            .setDescription(message)
-            .setFooter({ text: `Received from: ${player}` });
+    // Sends Minecraft chat messages to the appropriate Discord channels
+    async send_minecraft_message_to_discord(data) {
+        try{
+            let { guild, player, combinedbridge, message } = data;
+            let targetChannelId = null;
+            let guildDisplayName = '';
 
-        // Send embed to the guild-specific channel
-        const guildChannel = await this.client.channels.fetch(channelIds[guild]);
-        await guildChannel.send({ embeds: [embed] });
+            switch(guild) {
+                case 'IMS':
+                    targetChannelId = channelIds.IMS;
+                    guildDisplayName = '[IMS]';
+                    break;
+                case 'IMA':
+                    targetChannelId = channelIds.IMA;
+                    guildDisplayName = '[IMA]';
+                    break;
+                case 'IMC':
+                    targetChannelId = channelIds.IMC;
+                    guildDisplayName = '[IMC]';
+                    break;
+                default:
+                    console.warn(`[Discord] Unknown guild: ${data}`);
+                    return;
+            }
+            if (combinedbridge) {
+                targetChannelId = channelIds.COMBINED;
+                message = player + ": " + message;
 
-        // Also send embed to the combined channel if configured
-        if (channelIds.COMBINED) {
-            const combinedChannel = await this.client.channels.fetch(channelIds.COMBINED);
-            await combinedChannel.send({ embeds: [embed] });
+            }
+
+            const embed = new EmbedBuilder()
+                .setColor(this.get_guild_color(guild))
+                .setDescription(message)
+                .setFooter({ text: `Received from: ${guildDisplayName} ${player}` });
+
+            const channel = await this.client.channels.fetch(targetChannelId);
+            await channel.send({ embeds: [embed] });
+        } catch(err) {
+            console.error('[Discord] Send error:', err);
         }
     }
 

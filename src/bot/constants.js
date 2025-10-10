@@ -66,6 +66,14 @@ const IMS_application_category = '1346629255118717121';
 const IMC_application_category = '1346629292834033795';
 const IMA_application_category = '1346629323213373560';
 
+const IMS_bridge_channel = 'xxxxxxxxxxxxxxxxxxxxx';
+const IMC_bridge_channel = 'xxxxxxxxxxxxxxxxxxxxx';
+const IMA_bridge_channel = 'xxxxxxxxxxxxxxxxxxxxx';
+const Combined_bridge_channel = 'xxxxxxxxxxxxxxxxxxxxx';
+const Key_generation_channel = 'xxxxxxxxxxxxxxxxxxxxx';
+
+const WS_PORT = 3000;
+
 const appeals_server = 'https://discord.gg/YJvnyrr7Mc';
 
 module.exports = { 
@@ -123,5 +131,11 @@ module.exports = {
     IMS_application_category,
     IMC_application_category,
     IMA_application_category,
+    IMS_bridge_channel,
+    IMC_bridge_channel,
+    IMA_bridge_channel,
+    Combined_bridge_channel,
+    Key_generation_channel,
+    WS_PORT,
     appeals_server
 }

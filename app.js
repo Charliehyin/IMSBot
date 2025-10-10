@@ -14,8 +14,16 @@ const {
     verify_button_interaction,
     help_button_interaction
 } = require('./src/bot/commands/verify');
+const { WebSocketServer }  = require('./src/bot/bridge/web_socket_server');
+const { DiscordHandler }   = require('./src/bot/bridge/discord_handler');
+const { update_online_player_counts }   = require('./src/bot/bridge/bridge_counter');
 const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_roles');
-const { guild_id, automod_channel, general_channel } = require('./src/bot/constants');
+const { 
+    guild_id, 
+    automod_channel, 
+    general_channel,
+    WS_PORT
+} = require('./src/bot/constants');
 const { blacklist_command, blacklist_interaction } = require('./src/bot/commands/blacklist');
 const { get_uuid_command, get_uuid_interaction } = require('./src/bot/commands/get_uuid');
 const { punishments_command, punishments_interaction } = require('./src/bot/commands/punishments');
@@ -36,6 +44,7 @@ const { autosync_roles_all_guilds } = require('./src/bot/commands/autosync_roles
 const { fetch_guild_data, rank_guild_command, rank_guild_interaction } = require('./src/bot/commands/rank_guild');
 const { check_garden_command, check_garden_interaction } = require('./src/bot/commands/check_garden');
 const { track_user_command, track_user_interaction, process_active_tracking_sessions, stop_all_tracking } = require('./src/bot/commands/track_user');
+const { bridge_key_command, deactivate_bridge_key_command, bridgekey_interaction, deactivate_interaction } = require('./src/bot/commands/bridge_commands');
 // Create a new client instance
 const client = new Client({ 
     intents: [
@@ -73,6 +82,15 @@ client.once('ready', async () => {
     setInterval(async () => {
         process_active_tracking_sessions(client, db);
     }, 5 * 60 * 1000); // Check tracking sessions every 5 minutes
+    
+    // Bridge Websocket Start
+    const wsServer = new WebSocketServer({ port: WS_PORT || 3000, db, client });
+    client.wsServer = wsServer;
+    new DiscordHandler(client, wsServer);  
+    setInterval(async () => {
+        update_online_player_counts(client, wsServer);
+    }, 5 * 60 * 1000); // Check number of active websocket connections for each guild every 5 mins
+    // Bridge End
     await registerSlashCommands();
 });
 
@@ -94,7 +112,9 @@ async function registerSlashCommands() {
         unban_command,
         rank_guild_command,
         check_garden_command,
-        track_user_command
+        track_user_command,
+        bridge_key_command,
+        deactivate_bridge_key_command
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -163,6 +183,12 @@ client.on('interactionCreate', async interaction => {
                 break;
             case 'track_user':
                 await track_user_interaction(interaction, db, client);
+                break;
+            case 'bridgekey':
+                await bridgekey_interaction(interaction);
+                break;
+            case 'deactivate':
+                await deactivate_interaction(interaction);
                 break;
         }
     } 

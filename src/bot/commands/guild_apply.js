@@ -335,9 +335,10 @@ const handle_guild_accept = async (interaction, db, client) => {
             'Ironman Casuals': IMC_gm_ign,
             'Ironman Academy': IMA_gm_ign
         };
-        const gmIgn = gmByGuild[guildName];
+        // Safe lookup with a fallback placeholder if guildName is unexpected
+        const gmIgn = gmByGuild[guildName] ?? '<inviter_ign>';
 
-        let accepted_message = `You have been accepted into ${guildName}. A guild admin approved your application via Discord, and you are now on the waitlist.
+        let accepted_message = `You have been accepted into ${guildName}. You are now on the waitlist.
 
 Before joining the guild make sure that you:
 - Enable visits for both island and garden (stand on each island and enable them to guild members or anyone)

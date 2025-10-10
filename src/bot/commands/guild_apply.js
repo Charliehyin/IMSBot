@@ -16,7 +16,10 @@ const {
     IMA_application_category,
     ims_staff_role,
     imc_staff_role,
-    ima_staff_role
+    ima_staff_role,
+    IMS_gm_ign,
+    IMC_gm_ign,
+    IMA_gm_ign
 } = require('../constants');
 
 const setup_apply_command = new SlashCommandBuilder()
@@ -326,7 +329,15 @@ const handle_guild_accept = async (interaction, db, client) => {
         }
 
         let application_channel = rows[0].application_channel;
-        let accepted_message = `You have been accepted into ${guildName}. You are now on the waitlist.
+
+        const gmByGuild = {
+            'Ironman Sweats': IMS_gm_ign,
+            'Ironman Casuals': IMC_gm_ign,
+            'Ironman Academy': IMA_gm_ign
+        };
+        const gmIgn = gmByGuild[guildName];
+
+        let accepted_message = `You have been accepted into ${guildName}. A guild admin approved your application via Discord, and you are now on the waitlist.
 
 Before joining the guild make sure that you:
 - Enable visits for both island and garden (stand on each island and enable them to guild members or anyone)
@@ -337,7 +348,9 @@ Before joining the guild make sure that you:
 
 If you are inactive for longer than 7 days you will be kicked.
 
-If you miss the invite - be patient, you will be reinvited. DO NOT MAKE A TICKET\n`;
+If you miss the invite - be patient, you will be reinvited. DO NOT MAKE A TICKET!\n
+
+You can also type /guild accept ${gmIgn} to join.\n`
 
         // add the user to the waitlist
         switch(guildName) {

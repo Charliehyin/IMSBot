@@ -68,6 +68,11 @@ const IMA_application_category = '1346629323213373560';
 
 const appeals_server = 'https://discord.gg/YJvnyrr7Mc';
 
+// Guild Master IGN per guild (used for in-game accept instructions)
+const IMS_gm_ign = 'demote';
+const IMC_gm_ign = 'superdoff';
+const IMA_gm_ign = 'sarln';
+
 module.exports = { 
     embedColor, 
     guild_id,
@@ -123,5 +128,8 @@ module.exports = {
     IMS_application_category,
     IMC_application_category,
     IMA_application_category,
-    appeals_server
+    appeals_server,
+    IMS_gm_ign,
+    IMC_gm_ign,
+    IMA_gm_ign
 }

@@ -589,11 +589,19 @@ const handle_guild_notify_invited = async (interaction, db, client) => {
         let application_channel = rows[0].application_channel;
         application_channel = await client.channels.fetch(application_channel);
 
+        const gmByGuild = {
+            'Ironman Sweats': IMS_gm_ign,
+            'Ironman Casuals': IMC_gm_ign,
+            'Ironman Academy': IMA_gm_ign
+        };
+        const gmIgn = gmByGuild[guildName] ?? '<inviter_ign>';
         let notify_invited_message = `You have been invited to ${guildName}. 
         
 **Make sure to accept the invite when you next log in.** 
         
-If you missed the invite, don't worry, you will receive another one. <@${userid}>`;
+If you missed the invite, don't worry, you will receive another one. 
+
+You can also type /guild accept ${gmIgn} to join. <@${userid}>`;
 
         const dm = await member.createDM();
         dm.send(notify_invited_message);

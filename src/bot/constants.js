@@ -50,9 +50,9 @@ const ims_members_channel = '1348459267442606081';
 const imc_members_channel = '1348459500281270303';
 const ima_members_channel = '1348459567335473203';
 
-const IMA_req = 180;
+const IMA_req = 200;
 const IMC_req = 300;
-const IMS_req = 400;
+const IMS_req = 440;
 
 const IMA_waitlist = '1346626931293945886';
 const IMC_waitlist = '1346626909643214922';
@@ -75,6 +75,11 @@ const Key_generation_channel = 'xxxxxxxxxxxxxxxxxxxxx';
 const WS_PORT = 3000;
 
 const appeals_server = 'https://discord.gg/YJvnyrr7Mc';
+
+// Guild Master IGN per guild (used for in-game accept instructions)
+const IMS_gm_ign = 'demote';
+const IMC_gm_ign = 'superdoff';
+const IMA_gm_ign = 'sarln';
 
 module.exports = { 
     embedColor, 
@@ -131,11 +136,16 @@ module.exports = {
     IMS_application_category,
     IMC_application_category,
     IMA_application_category,
+    // Additional bridge and config fields present on this branch
     IMS_bridge_channel,
     IMC_bridge_channel,
     IMA_bridge_channel,
     Combined_bridge_channel,
     Key_generation_channel,
     WS_PORT,
-    appeals_server
+    // From main branch
+    appeals_server,
+    IMS_gm_ign,
+    IMC_gm_ign,
+    IMA_gm_ign
 }

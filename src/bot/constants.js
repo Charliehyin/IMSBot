@@ -51,7 +51,7 @@ const imc_members_channel = '1348459500281270303';
 const ima_members_channel = '1348459567335473203';
 
 const IMA_req = 200;
-const IMC_req = 300;
+const IMC_req = 360;
 const IMS_req = 440;
 
 const IMA_waitlist = '1346626931293945886';
@@ -77,7 +77,7 @@ const WS_PORT = 3000;
 const appeals_server = 'https://discord.gg/YJvnyrr7Mc';
 
 // Guild Master IGN per guild (used for in-game accept instructions)
-const IMS_gm_ign = 'demote';
+const IMS_gm_ign = 'demote_';
 const IMC_gm_ign = 'superdoff';
 const IMA_gm_ign = 'sarln';
 

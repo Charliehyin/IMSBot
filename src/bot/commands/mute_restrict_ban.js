@@ -330,7 +330,7 @@ const punish_interaction = async (interaction, db, punishment_type) => {
                 }
             } else {
                 sql = 'INSERT INTO current_punishments (user_id, guild_id, end_time, reason, punishment_type) VALUES (?, ?, ?, ?, ?)';
-                await db.query(sql, [user.id, interaction.guildId, Date.now() + 60 * 1000, '30 day LFP ban with LFP+ ban', 'lfp']);
+                await db.query(sql, [user.id, interaction.guildId, Date.now() + 30 * 24 * 60 * 60 * 1000, '30 day LFP ban with LFP+ ban', 'lfp']);
             }
 
         }

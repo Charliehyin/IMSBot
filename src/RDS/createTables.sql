@@ -89,6 +89,7 @@ CREATE TABLE guild_member_data (
     lily_weight INT NOT NULL,
     skyblock_xp INT NOT NULL,
     farming_xp FLOAT NOT NULL,
+    current_snapshot TINYINT(1) NOT NULL DEFAULT 0,
     INDEX (time_stamp)
 );
 

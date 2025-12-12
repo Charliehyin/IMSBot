@@ -34,6 +34,7 @@ const { skycrypt_command, skycrypt_interaction } = require('./src/bot/commands/s
 const { mute_command, restrict_command, ban_command, unban_command, ban_interaction, unban_interaction, punish_interaction, checkExpiredPunishments } = require('./src/bot/commands/mute_restrict_ban');
 const { autosync_roles_all_guilds } = require('./src/bot/commands/autosync_roles');
 const { fetch_guild_data, rank_guild_command, rank_guild_interaction } = require('./src/bot/commands/rank_guild');
+const { refresh_current_snapshot_command, refresh_current_snapshot_interaction, sync_all_guilds } = require('./src/bot/commands/refresh_current_snapshot');
 const { check_garden_command, check_garden_interaction } = require('./src/bot/commands/check_garden');
 const { track_user_command, track_user_interaction, process_active_tracking_sessions, stop_all_tracking } = require('./src/bot/commands/track_user');
 // Create a new client instance
@@ -71,6 +72,14 @@ client.once('ready', async () => {
         fetch_guild_data(client, db);
     }, 60 * 60 * 1000); // Check every 60 minutes
     setInterval(async () => {
+        try {
+            const results = await sync_all_guilds(db, client);
+            console.log('Auto sync_current_guild_members:\n' + results.join('\n'));
+        } catch (err) {
+            console.error('Auto sync_current_guild_members failed:', err);
+        }
+    }, 3 * 60 * 60 * 1000); // Sync guild members every 3 hours
+    setInterval(async () => {
         process_active_tracking_sessions(client, db);
     }, 5 * 60 * 1000); // Check tracking sessions every 5 minutes
     await registerSlashCommands();
@@ -94,7 +103,8 @@ async function registerSlashCommands() {
         unban_command,
         rank_guild_command,
         check_garden_command,
-        track_user_command
+        track_user_command,
+        refresh_current_snapshot_command
     ].map(command => command.toJSON());
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -163,6 +173,9 @@ client.on('interactionCreate', async interaction => {
                 break;
             case 'track_user':
                 await track_user_interaction(interaction, db, client);
+                break;
+            case 'sync_current_guild_members':
+                await refresh_current_snapshot_interaction(interaction, db, client);
                 break;
         }
     } 

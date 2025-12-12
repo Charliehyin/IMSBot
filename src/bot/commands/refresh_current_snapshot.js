@@ -28,7 +28,17 @@ const refresh_current_snapshot_command = new SlashCommandBuilder()
     .setName('sync_current_guild_members')
     .setDescription('Syncs current guild members (Hypixel) to DB flags and Discord roles')
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
-    .setDMPermission(false);
+    .setDMPermission(false)
+    .addStringOption(option =>
+        option
+            .setName('guild')
+            .setDescription('Which guild to sync (default: all)')
+            .addChoices(
+                { name: 'All', value: 'all' },
+                { name: 'IMS', value: ims_guild_id },
+                { name: 'IMC', value: imc_guild_id },
+                { name: 'IMA', value: ima_guild_id }
+            ));
 
 async function fetchGuildMemberUUIDs(guildId) {
     console.log(`Fetching guild data for ${guildId}...`);
@@ -217,9 +227,13 @@ async function addDiscordRoles(client, roleId, discordUserIds) {
     return { added, errors };
 }
 
-async function sync_all_guilds(db, client) {
+async function sync_all_guilds(db, client, targetGuildIds = null) {
     const results = [];
-    for (const { id, name } of guildIds) {
+    const selected = targetGuildIds
+        ? guildIds.filter(g => targetGuildIds.includes(g.id))
+        : guildIds;
+
+    for (const { id, name } of selected) {
         try {
             const uuids = await fetchGuildMemberUUIDs(id);
             const { added, removed, addedList, removedList, inserted } = await markCurrentMembers(db, id, uuids);
@@ -261,7 +275,9 @@ async function sync_all_guilds(db, client) {
 
 const refresh_current_snapshot_interaction = async (interaction, db, client) => {
     await interaction.deferReply({ ephemeral: false });
-    const results = await sync_all_guilds(db, client);
+    const selectedGuildId = interaction.options.getString('guild');
+    const targetIds = selectedGuildId && selectedGuildId !== 'all' ? [selectedGuildId] : null;
+    const results = await sync_all_guilds(db, client, targetIds);
     await interaction.editReply(`Refresh complete:\n${results.join('\n')}`);
 };
 

@@ -78,7 +78,7 @@ client.once('ready', async () => {
         } catch (err) {
             console.error('Auto sync_current_guild_members failed:', err);
         }
-    }, 3 * 60 * 60 * 1000); // Sync guild members every 3 hours
+    }, 24 * 60 * 60 * 1000); // Sync guild members every day
     setInterval(async () => {
         process_active_tracking_sessions(client, db);
     }, 5 * 60 * 1000); // Check tracking sessions every 5 minutes

@@ -31,7 +31,7 @@ const {
     handle_guild_notify_invited
 } = require('./src/bot/commands/guild_apply');
 const { skycrypt_command, skycrypt_interaction } = require('./src/bot/commands/skycrypt');
-const { mute_command, restrict_command, ban_command, unban_command, ban_interaction, unban_interaction, punish_interaction, checkExpiredPunishments } = require('./src/bot/commands/mute_restrict_ban');
+const { mute_command, restrict_command, lfp_restrict_command, ban_command, unban_command, ban_interaction, unban_interaction, lfp_restrict_interaction, punish_interaction, checkExpiredPunishments } = require('./src/bot/commands/mute_restrict_ban');
 const { autosync_roles_all_guilds } = require('./src/bot/commands/autosync_roles');
 const { fetch_guild_data, rank_guild_command, rank_guild_interaction } = require('./src/bot/commands/rank_guild');
 const { refresh_current_snapshot_command, refresh_current_snapshot_interaction, sync_all_guilds } = require('./src/bot/commands/refresh_current_snapshot');
@@ -99,6 +99,7 @@ async function registerSlashCommands() {
         skycrypt_command,
         mute_command,
         restrict_command,
+        lfp_restrict_command,
         ban_command,
         unban_command,
         rank_guild_command,
@@ -158,6 +159,9 @@ client.on('interactionCreate', async interaction => {
                 break;
             case 'restrict':
                 await punish_interaction(interaction, db);
+                break;
+            case 'lfp_restrict':
+                await lfp_restrict_interaction(interaction, db);
                 break;
             case 'ban':
                 await ban_interaction(interaction, db);

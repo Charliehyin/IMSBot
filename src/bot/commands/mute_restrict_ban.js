@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { punishments_interaction } = require('./punishments');
-const { ims_bot_id, punishment_log_channel, lfp_access_role, lfp_plus_access_role, bridge_access_role, muted_role, restricted_role, ticket_restricted_role, flex_restricted_role, qna_restricted_role, suggestion_restricted_role, hos_restricted_role, vc_restricted_role, lfp_restricted_role, lfp_plus_restricted_role, bridge_restricted_role, xp_restricted_role, appeals_server, cheater_role } = require('../constants');
+const { ims_bot_id, punishment_log_channel, lfp_punishment_log_channel, lfp_access_role, lfp_plus_access_role, bridge_access_role, muted_role, restricted_role, ticket_restricted_role, flex_restricted_role, qna_restricted_role, suggestion_restricted_role, hos_restricted_role, vc_restricted_role, lfp_restricted_role, lfp_plus_restricted_role, bridge_restricted_role, xp_restricted_role, appeals_server, cheater_role } = require('../constants');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const { log_action } = require('./log_action');
 
@@ -63,6 +63,42 @@ const restrict_command = new SlashCommandBuilder()
     .addBooleanOption(option =>
         option.setName('silent')
             .setDescription('Do not log this restriction')
+            .setRequired(false));
+
+const lfp_restrict_command = new SlashCommandBuilder()
+    .setName('lfp_restrict')
+    .setDescription('Restrict a user from LFP/LFP+')
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
+    .setDMPermission(false)
+    .addMentionableOption(option =>
+        option.setName('user')
+            .setDescription('The user to restrict')
+            .setRequired(true))
+    .addStringOption(option =>
+        option.setName('type')
+            .setDescription('Type of LFP restriction')
+            .setRequired(true)
+            .addChoices(
+                { name: 'Talking outside of threads', value: 'talk_outside_threads' },
+                { name: 'Re-opening/extending thread length', value: 'reopen_extend_thread' },
+                { name: 'Misuse of ping', value: 'misuse_ping' },
+                { name: 'Ghost pinging', value: 'ghost_pinging' },
+                { name: 'Troll pinging', value: 'troll_pinging' },
+                { name: 'Sending unrelated images', value: 'unrelated_images' },
+                { name: 'Warping other users in', value: 'warp_users' },
+                { name: 'Griefing', value: 'griefing' },
+                { name: 'Using LFP+ from normal profile', value: 'lfp_plus_normal_profile' },
+                { name: 'Mass pinging', value: 'mass_pinging' },
+                { name: 'LFP custom duration', value: 'lfp_custom' },
+                { name: 'LFP+ custom duration', value: 'lfp_plus_custom' }
+            ))
+    .addStringOption(option =>
+        option.setName('duration')
+            .setDescription('Restrict duration (e.g., 1s, 1m, 1h, 1d, 1w, perm)')
+            .setRequired(false))
+    .addStringOption(option =>
+        option.setName('reason')
+            .setDescription('Reason for restricting')
             .setRequired(false));
 
 const ban_command = new SlashCommandBuilder()
@@ -210,6 +246,212 @@ const unban_interaction = async (interaction, db) => {
     }
 }
 
+const lfp_restrict_interaction = async (interaction, db) => {
+    interaction.deferReply();
+    const user = interaction.options.getUser('user');
+    const type = interaction.options.getString('type');
+    const durationInput = interaction.options.getString('duration');
+    const reasonInput = interaction.options.getString('reason');
+
+    let punishment_type = 'lfp';
+    let duration;
+    let reason;
+    let requiresDuration = false;
+    let typeLabel = 'LFP restriction';
+
+    switch (type) {
+        case 'talk_outside_threads':
+            duration = '1d';
+            reason = 'Talking outside of threads';
+            typeLabel = 'Talking outside of threads';
+            break;
+        case 'reopen_extend_thread':
+            duration = '1d';
+            reason = 'Re-opening/extending thread length';
+            typeLabel = 'Re-opening/extending thread length';
+            break;
+        case 'misuse_ping':
+            duration = '1d';
+            reason = 'Misuse of ping';
+            typeLabel = 'Misuse of ping';
+            break;
+        case 'ghost_pinging':
+            duration = '3d';
+            reason = 'Ghost pinging';
+            typeLabel = 'Ghost pinging';
+            break;
+        case 'troll_pinging':
+            duration = '1w';
+            reason = 'Troll pinging';
+            typeLabel = 'Troll pinging';
+            break;
+        case 'unrelated_images':
+            duration = '1w';
+            reason = 'Sending unrelated images';
+            typeLabel = 'Sending unrelated images';
+            break;
+        case 'warp_users':
+            duration = 'perm';
+            reason = 'Warping other users in';
+            typeLabel = 'Warping other users in';
+            break;
+        case 'griefing':
+            duration = 'perm';
+            reason = 'Griefing';
+            typeLabel = 'Griefing';
+            break;
+        case 'mass_pinging':
+            duration = 'perm';
+            reason = 'Mass pinging';
+            typeLabel = 'Mass pinging';
+            break;
+        case 'lfp_plus_normal_profile':
+            punishment_type = 'lfp_plus';
+            duration = 'perm';
+            reason = 'Using LFP+ from a normal profile';
+            typeLabel = 'Using LFP+ from a normal profile';
+            break;
+        case 'lfp_custom':
+            punishment_type = 'lfp';
+            requiresDuration = true;
+            duration = durationInput;
+            reason = 'LFP restriction';
+            typeLabel = 'LFP custom';
+            break;
+        case 'lfp_plus_custom':
+            punishment_type = 'lfp_plus';
+            requiresDuration = true;
+            duration = durationInput;
+            reason = 'LFP+ restriction';
+            typeLabel = 'LFP+ custom';
+            break;
+        default:
+            return interaction.editReply('Invalid LFP restriction type.');
+    }
+
+    if (requiresDuration && !duration) {
+        return interaction.editReply('Duration is required for custom LFP restrictions.');
+    }
+
+    if (reasonInput && reasonInput.trim().length > 0) {
+        reason = reasonInput;
+    }
+
+    const durationInMs = parseDuration(duration);
+    if (!durationInMs) {
+        return interaction.editReply('Invalid duration format. Please use formats like 1h, 1d, or 1w.');
+    }
+
+    const endTime = Date.now() + durationInMs;
+
+    try {
+        let sql = 'SELECT * FROM current_punishments WHERE user_id = ? AND guild_id = ? AND punishment_type = ?';
+        const [rows] = await db.query(sql, [user.id, interaction.guildId, punishment_type]);
+        if (rows.length > 0) {
+            sql = 'UPDATE current_punishments SET end_time = ? WHERE id = ?';
+            await db.query(sql, [endTime, rows[0].id]);
+        }
+
+        if (duration !== 'perm' || punishment_type === 'lfp_plus') {
+            sql = 'INSERT INTO current_punishments (user_id, guild_id, end_time, reason, punishment_type) VALUES (?, ?, ?, ?, ?)';
+            await db.query(sql, [user.id, interaction.guildId, endTime, reason, punishment_type]);
+        }
+
+        const member = await interaction.guild.members.fetch(user.id);
+        if (punishment_type === 'lfp') {
+            await member.roles.add(lfp_restricted_role);
+        }
+        else {
+            await member.roles.add(lfp_plus_restricted_role);
+            await member.roles.add(lfp_restricted_role);
+        }
+        await member.roles.remove(lfp_access_role);
+        await member.roles.remove(lfp_plus_access_role);
+
+        if (punishment_type === 'lfp_plus') {
+            let lfp_end_time = Date.now() + durationInMs;
+            if (duration === 'perm') {
+                lfp_end_time = Date.now() + 30 * 24 * 60 * 60 * 1000;
+            }
+
+            let sql = 'SELECT * FROM current_punishments WHERE user_id = ? AND guild_id = ? AND punishment_type = ?';
+            const [lfpRows] = await db.query(sql, [user.id, interaction.guildId, 'lfp']);
+            if (lfpRows.length > 0) {
+                const original_lfp_end_time = lfpRows[0].end_time;
+                if (lfp_end_time > original_lfp_end_time) {
+                    sql = 'UPDATE current_punishments SET end_time = ? WHERE id = ?';
+                    await db.query(sql, [lfp_end_time, lfpRows[0].id]);
+                }
+            } else {
+                sql = 'INSERT INTO current_punishments (user_id, guild_id, end_time, reason, punishment_type) VALUES (?, ?, ?, ?, ?)';
+                const lfp_reason = duration === 'perm' ? '30 day LFP ban with LFP+ ban' : reason;
+                await db.query(sql, [user.id, interaction.guildId, lfp_end_time, lfp_reason, 'lfp']);
+            }
+        }
+
+        const punishmentLogChannel = await interaction.guild.channels.fetch(lfp_punishment_log_channel);
+        const fakeInteraction = {
+            options: {
+                getMentionable: () => ({ id: user.id }),
+                getSubcommand: () => 'add',
+                getString: (name) => {
+                    if (name === 'punishment') {
+                        return `${duration} ${punishment_type} restricted`;
+                    }
+                    else if (name === 'reason') {
+                        return reason;
+                    }
+                    else {
+                        return null;
+                    }
+                }
+            },
+            reply: async (content) => {
+                await punishmentLogChannel.send(content);
+            },
+            fetchReply: async () => {
+                const messages = await punishmentLogChannel.messages.fetch({ limit: 1 });
+                return messages.first();
+            },
+            guildId: interaction.guildId,
+            channelId: lfp_punishment_log_channel,
+            createdTimestamp: interaction.createdTimestamp,
+            user: interaction.user,
+            client: interaction.client
+        };
+
+        await punishments_interaction(fakeInteraction, db, 'add');
+
+        let punishmentSummary = `${duration} ${punishment_type.toUpperCase()} restriction`;
+        if (punishment_type === 'lfp_plus') {
+            if (duration === 'perm') {
+                punishmentSummary = 'perm LFP+ restriction + 30d LFP restriction';
+            } else {
+                punishmentSummary = `${duration} LFP+ restriction + ${duration} LFP restriction`;
+            }
+        }
+        let dm_string = `You have been ${punishment_type} restricted in ${interaction.guild.name} for ${duration}. \nReason: ${reason}`;
+        try {
+            await user.send(dm_string);
+        } catch (error) {
+            console.error(`Failed to send DM to ${user.tag}: ${error}`);
+        }
+
+        const typeLine = `Type: ${typeLabel}`;
+        const reasonLine = (reason && reason.trim().toLowerCase() !== typeLabel.trim().toLowerCase())
+            ? `\nReason: ${reason}`
+            : '';
+        let punishment_string = `**${interaction.user}** ${punishment_type} restricted <@${user.id}> for ${duration}. \n${typeLine}\nPunishment: ${punishmentSummary}${reasonLine}`;
+        let punishment_type_string = punishment_type + ' restricted';
+        await log_action(interaction.client, `${punishment_type_string}`, interaction.user, `${user.id}`, punishment_string);
+        await interaction.editReply(punishment_string);
+
+    } catch (error) {
+        console.error('Error applying LFP restriction:', error);
+        interaction.editReply(`An error occurred while trying to punish the user: ${error}`);
+    }
+};
+
 const punish_interaction = async (interaction, db, punishment_type) => {
     interaction.deferReply();
     const user = interaction.options.getUser('user');
@@ -294,7 +536,7 @@ const punish_interaction = async (interaction, db, punishment_type) => {
         if (duration === 'perm') {
             console.log('   Permanent punishment applied');
         }
-        else {
+        if (duration !== 'perm' || punishment_type === 'lfp_plus') {
             sql = 'INSERT INTO current_punishments (user_id, guild_id, end_time, reason, punishment_type) VALUES (?, ?, ?, ?, ?)';
             await db.query(sql, [user.id, interaction.guildId, endTime, reason, punishment_type]);
         }
@@ -308,10 +550,8 @@ const punish_interaction = async (interaction, db, punishment_type) => {
             await member.roles.remove(lfp_plus_access_role)
             await member.roles.remove(lfp_access_role)
 
-            
             let lfp_end_time;
             if (duration === 'perm') {
-                // 30 day lfp ban for permanent punishment
                 lfp_end_time = Date.now() + 30 * 24 * 60 * 60 * 1000;
             }
             else {
@@ -321,21 +561,20 @@ const punish_interaction = async (interaction, db, punishment_type) => {
             let sql = 'SELECT * FROM current_punishments WHERE user_id = ? AND guild_id = ? AND punishment_type = ?';
             const [rows] = await db.query(sql, [user.id, interaction.guildId, 'lfp']);
             if (rows.length > 0) {
-                original_lfp_end_time = rows[0].end_time;
-
-                // Replace original end time with longer end time
+                const original_lfp_end_time = rows[0].end_time;
                 if (lfp_end_time > original_lfp_end_time) {
                     sql = 'UPDATE current_punishments SET end_time = ? WHERE id = ?';
                     await db.query(sql, [lfp_end_time, rows[0].id]);
                 }
             } else {
                 sql = 'INSERT INTO current_punishments (user_id, guild_id, end_time, reason, punishment_type) VALUES (?, ?, ?, ?, ?)';
-                await db.query(sql, [user.id, interaction.guildId, Date.now() + 30 * 24 * 60 * 60 * 1000, '30 day LFP ban with LFP+ ban', 'lfp']);
+                const lfp_reason = duration === 'perm' ? '30 day LFP ban with LFP+ ban' : reason;
+                await db.query(sql, [user.id, interaction.guildId, lfp_end_time, lfp_reason, 'lfp']);
             }
-
         }
         if (punishment_type === 'lfp') {
             await member.roles.remove(lfp_access_role)
+            await member.roles.remove(lfp_plus_access_role)
         }
         if (punishment_type === 'bridge') {
             await member.roles.remove(bridge_access_role)
@@ -343,7 +582,10 @@ const punish_interaction = async (interaction, db, punishment_type) => {
 
         if (!silent) {
             // Create a separate channel object for the punishment log
-            const punishmentLogChannel = await interaction.guild.channels.fetch(punishment_log_channel);
+            const logChannelId = (punishment_type === 'lfp' || punishment_type === 'lfp_plus')
+                ? lfp_punishment_log_channel
+                : punishment_log_channel;
+            const punishmentLogChannel = await interaction.guild.channels.fetch(logChannelId);
 
             // Modify the fakeInteraction to use the punishment log channel
             const fakeInteraction = {
@@ -380,7 +622,7 @@ const punish_interaction = async (interaction, db, punishment_type) => {
                     return messages.first();
                 },
                 guildId: interaction.guildId,
-                channelId: punishment_log_channel,
+                channelId: logChannelId,
                 createdTimestamp: interaction.createdTimestamp,
                 user: interaction.user,
                 client: interaction.client
@@ -534,4 +776,4 @@ async function checkExpiredPunishments(client, db) {
     }
 }
 
-module.exports = { mute_command, restrict_command, ban_command, unban_command, ban_interaction, unban_interaction, punish_interaction, checkExpiredPunishments };
+module.exports = { mute_command, restrict_command, lfp_restrict_command, ban_command, unban_command, ban_interaction, unban_interaction, lfp_restrict_interaction, punish_interaction, checkExpiredPunishments };

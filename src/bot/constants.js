@@ -50,7 +50,7 @@ const ims_members_channel = '1348459267442606081';
 const imc_members_channel = '1348459500281270303';
 const ima_members_channel = '1348459567335473203';
 
-const IMA_req = 200;
+const IMA_req = 240;
 const IMC_req = 360;
 const IMS_req = 440;
 

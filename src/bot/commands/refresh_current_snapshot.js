@@ -7,7 +7,8 @@ const {
     ima_guild_id,
     ims_guild_role,
     imc_guild_role,
-    ima_guild_role
+    ima_guild_role,
+    log_channel
 } = require('../constants');
 
 const API_KEY = process.env.HYPIXEL_API_KEY;
@@ -166,16 +167,21 @@ async function markCurrentMembers(db, guildId, memberUUIDs) {
 }
 
 async function removeDiscordRoles(client, roleId, discordUserIds) {
-    if (!discordUserIds.length) return { removed: 0, errors: 0 };
+    if (!discordUserIds.length) return { removed: 0, errors: 0, errorDetails: [] };
     let removed = 0;
     let errors = 0;
+    const errorDetails = [];
     const chunkSize = 50;
     let guild;
     try {
         guild = await client.guilds.fetch(discord_guild_id);
     } catch (err) {
         console.error('Failed to fetch Discord guild for role removals:', err);
-        return { removed: 0, errors: discordUserIds.length };
+        return {
+            removed: 0,
+            errors: discordUserIds.length,
+            errorDetails: discordUserIds.map(id => ({ discordId: id, error: err.message || String(err) }))
+        };
     }
 
     for (let i = 0; i < discordUserIds.length; i += chunkSize) {
@@ -189,24 +195,30 @@ async function removeDiscordRoles(client, roleId, discordUserIds) {
                 }
             } catch (err) {
                 errors += 1;
+                errorDetails.push({ discordId: userId, error: err.message || String(err) });
                 console.error(`Failed to remove role for ${userId}:`, err.message);
             }
         }
     }
-    return { removed, errors };
+    return { removed, errors, errorDetails };
 }
 
 async function addDiscordRoles(client, roleId, discordUserIds) {
-    if (!discordUserIds.length) return { added: 0, errors: 0 };
+    if (!discordUserIds.length) return { added: 0, errors: 0, errorDetails: [] };
     let added = 0;
     let errors = 0;
+    const errorDetails = [];
     const chunkSize = 50;
     let guild;
     try {
         guild = await client.guilds.fetch(discord_guild_id);
     } catch (err) {
         console.error('Failed to fetch Discord guild for role additions:', err);
-        return { added: 0, errors: discordUserIds.length };
+        return {
+            added: 0,
+            errors: discordUserIds.length,
+            errorDetails: discordUserIds.map(id => ({ discordId: id, error: err.message || String(err) }))
+        };
     }
 
     for (let i = 0; i < discordUserIds.length; i += chunkSize) {
@@ -220,11 +232,30 @@ async function addDiscordRoles(client, roleId, discordUserIds) {
                 }
             } catch (err) {
                 errors += 1;
+                errorDetails.push({ discordId: userId, error: err.message || String(err) });
                 console.error(`Failed to add role for ${userId}:`, err.message);
             }
         }
     }
-    return { added, errors };
+    return { added, errors, errorDetails };
+}
+
+async function formatRoleErrorDetails(db, errorDetails, label) {
+    if (!errorDetails.length) return [];
+    const uniqueIds = [...new Set(errorDetails.map(e => e.discordId))];
+    const [rows] = await db.query(
+        'SELECT discord_id, ign, uuid FROM members WHERE discord_id IN (?)',
+        [uniqueIds]
+    );
+    const byDiscordId = new Map(rows.map(r => [r.discord_id, r]));
+    const lines = [`  ${label}:`];
+    for (const err of errorDetails) {
+        const row = byDiscordId.get(err.discordId);
+        const ign = row?.ign ? row.ign : 'unknown';
+        const uuid = row?.uuid ? row.uuid : 'unknown';
+        lines.push(`  - discord_id=${err.discordId} ign=${ign} uuid=${uuid} error=${err.error}`);
+    }
+    return lines;
 }
 
 async function sync_all_guilds(db, client, targetGuildIds = null) {
@@ -239,8 +270,8 @@ async function sync_all_guilds(db, client, targetGuildIds = null) {
             const { added, removed, addedList, removedList, inserted } = await markCurrentMembers(db, id, uuids);
 
             const roleId = roleByGuildId.get(id);
-            let roleRemovals = { removed: 0, errors: 0 };
-            let roleAdditions = { added: 0, errors: 0 };
+            let roleRemovals = { removed: 0, errors: 0, errorDetails: [] };
+            let roleAdditions = { added: 0, errors: 0, errorDetails: [] };
 
             if (roleId && removedList.length > 0) {
                 const [rows] = await db.query(
@@ -264,7 +295,15 @@ async function sync_all_guilds(db, client, targetGuildIds = null) {
                 }
             }
 
-            results.push(`${name} : api=${uuids.length}, inserted=${inserted}, added=${added}, removed=${removed}, role adds=${roleAdditions.added}, add errors=${roleAdditions.errors}, role removals=${roleRemovals.removed}, remove errors=${roleRemovals.errors}`);
+            const summary = `${name} : api=${uuids.length}, inserted=${inserted}, added=${added}, removed=${removed}, role adds=${roleAdditions.added}, add errors=${roleAdditions.errors}, role removals=${roleRemovals.removed}, remove errors=${roleRemovals.errors}`;
+            const detailLines = [];
+            if (roleAdditions.errorDetails.length) {
+                detailLines.push(...await formatRoleErrorDetails(db, roleAdditions.errorDetails, 'Role add errors'));
+            }
+            if (roleRemovals.errorDetails.length) {
+                detailLines.push(...await formatRoleErrorDetails(db, roleRemovals.errorDetails, 'Role removal errors'));
+            }
+            results.push(detailLines.length ? `${summary}\n${detailLines.join('\n')}` : summary);
         } catch (err) {
             console.error(`Error refreshing current_snapshot for ${name}:`, err);
             results.push(`${name} : error - ${err.message}`);
@@ -278,7 +317,16 @@ const refresh_current_snapshot_interaction = async (interaction, db, client) => 
     const selectedGuildId = interaction.options.getString('guild');
     const targetIds = selectedGuildId && selectedGuildId !== 'all' ? [selectedGuildId] : null;
     const results = await sync_all_guilds(db, client, targetIds);
-    await interaction.editReply(`Refresh complete:\n${results.join('\n')}`);
+    const replyText = `Refresh complete:\n${results.join('\n')}`;
+    await interaction.editReply(replyText);
+    try {
+        const channel = await client.channels.fetch(log_channel);
+        if (channel && channel.isTextBased()) {
+            await channel.send(`Manual sync_current_guild_members by <@${interaction.user.id}>:\n${results.join('\n')}`);
+        }
+    } catch (err) {
+        console.error('Failed to send manual sync log message:', err);
+    }
 };
 
 module.exports = {

@@ -15,7 +15,7 @@ const {
     help_button_interaction
 } = require('./src/bot/commands/verify');
 const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_roles');
-const { guild_id, automod_channel, general_channel, qna_channel } = require('./src/bot/constants');
+const { guild_id, automod_channel, general_channel, qna_channel, log_channel } = require('./src/bot/constants');
 const { blacklist_command, blacklist_interaction } = require('./src/bot/commands/blacklist');
 const { get_uuid_command, get_uuid_interaction } = require('./src/bot/commands/get_uuid');
 const { punishments_command, punishments_interaction } = require('./src/bot/commands/punishments');
@@ -62,6 +62,17 @@ const fetchStarterMessageWithRetry = async thread => {
     return thread.fetchStarterMessage().catch(() => null);
 };
 
+const sendLogMessage = async (client, content) => {
+    try {
+        const channel = await client.channels.fetch(log_channel);
+        if (channel && channel.isTextBased()) {
+            await channel.send(content);
+        }
+    } catch (error) {
+        console.error('Error sending log message:', error);
+    }
+};
+
 // Database connection
 const db = mysql.createPool({
     host: process.env.DB_HOST,
@@ -89,9 +100,12 @@ client.once('ready', async () => {
     setInterval(async () => {
         try {
             const results = await sync_all_guilds(db, client);
-            console.log('Auto sync_current_guild_members:\n' + results.join('\n'));
+            const logText = 'Auto sync_current_guild_members:\n' + results.join('\n');
+            console.log(logText);
+            await sendLogMessage(client, logText);
         } catch (err) {
             console.error('Auto sync_current_guild_members failed:', err);
+            await sendLogMessage(client, 'Auto sync_current_guild_members failed: ' + (err?.message || err));
         }
     }, 24 * 60 * 60 * 1000); // Sync guild members every day
     setInterval(async () => {

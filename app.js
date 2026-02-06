@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, REST, Routes } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, MessageType } = require('discord.js');
 const mysql = require('mysql2/promise');
 const { botStatus } = require('./src/bot/botStatus');
 
@@ -15,7 +15,7 @@ const {
     help_button_interaction
 } = require('./src/bot/commands/verify');
 const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_roles');
-const { guild_id, automod_channel, general_channel, qna_channel, log_channel } = require('./src/bot/constants');
+const { guild_id, automod_channel, general_channel, qna_channel, log_channel, hall_of_shame_channel, hall_of_shame_reactions } = require('./src/bot/constants');
 const { blacklist_command, blacklist_interaction } = require('./src/bot/commands/blacklist');
 const { get_uuid_command, get_uuid_interaction } = require('./src/bot/commands/get_uuid');
 const { punishments_command, punishments_interaction } = require('./src/bot/commands/punishments');
@@ -267,6 +267,16 @@ client.on('messageCreate', async message => {
 
     // Ignore messages from bots
     if (message.author.bot) return;
+
+    if (message.channel.id === hall_of_shame_channel && !message.channel.isThread() && !message.system && message.type !== MessageType.ThreadCreated) {
+        try {
+            for (const emoji of hall_of_shame_reactions) {
+                await message.react(emoji);
+            }
+        } catch (error) {
+            console.error('Error reacting in hall-of-shame:', error);
+        }
+    }
 
     const roleId = '886038506659545121';
     const channelId = '973254960479350794';

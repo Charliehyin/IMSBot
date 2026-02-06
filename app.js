@@ -48,19 +48,12 @@ const client = new Client({
     ] 
 });
 
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-
 const shouldAutoPinThread = thread => {
     if (!PIN_THREAD_PARENT_IDS.length) return false;
     return PIN_THREAD_PARENT_IDS.includes(thread.parentId);
 };
 
-const fetchStarterMessageWithRetry = async thread => {
-    let starter = await thread.fetchStarterMessage().catch(() => null);
-    if (starter) return starter;
-    await sleep(1500);
-    return thread.fetchStarterMessage().catch(() => null);
-};
+const THREAD_PIN_MESSAGE = 'Pinned for mobile users: tap to jump to the top of this thread.';
 
 const sendLogMessage = async (client, content) => {
     try {
@@ -258,13 +251,10 @@ client.on('threadCreate', async (thread, newlyCreated) => {
     if (!shouldAutoPinThread(thread)) return;
 
     try {
-        const starterMessage = await fetchStarterMessageWithRetry(thread);
-        if (!starterMessage) return;
-        if (starterMessage.pinned) return;
-
-        await starterMessage.pin('Auto-pin thread starter message');
+        const botMessage = await thread.send(THREAD_PIN_MESSAGE);
+        await botMessage.pin('Auto-pin thread header');
     } catch (error) {
-        console.error('Error auto-pinning thread starter:', error);
+        console.error('Error auto-pinning thread header:', error);
     }
 });
 

@@ -75,6 +75,9 @@ const IMS_gm_ign = 'demote_';
 const IMC_gm_ign = 'superdoff';
 const IMA_gm_ign = 'sarln';
 
+const hall_of_shame_channel = '867647682255781949';
+const hall_of_shame_reactions = ['<:GoodHoS:954028056882839582>', '<:BadHoS:954028075664937021>'];
+
 module.exports = { 
     embedColor, 
     guild_id,
@@ -135,5 +138,7 @@ module.exports = {
     appeals_server,
     IMS_gm_ign,
     IMC_gm_ign,
-    IMA_gm_ign
+    IMA_gm_ign,
+    hall_of_shame_channel,
+    hall_of_shame_reactions
 }

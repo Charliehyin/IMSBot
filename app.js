@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, REST, Routes } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, MessageType } = require('discord.js');
 const mysql = require('mysql2/promise');
 const { botStatus } = require('./src/bot/botStatus');
 
@@ -15,7 +15,7 @@ const {
     help_button_interaction
 } = require('./src/bot/commands/verify');
 const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_roles');
-const { guild_id, automod_channel, general_channel, qna_channel, log_channel } = require('./src/bot/constants');
+const { guild_id, automod_channel, general_channel, qna_channel, log_channel, hall_of_shame_channel, hall_of_shame_reactions } = require('./src/bot/constants');
 const { blacklist_command, blacklist_interaction } = require('./src/bot/commands/blacklist');
 const { get_uuid_command, get_uuid_interaction } = require('./src/bot/commands/get_uuid');
 const { punishments_command, punishments_interaction } = require('./src/bot/commands/punishments');
@@ -48,19 +48,12 @@ const client = new Client({
     ] 
 });
 
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-
 const shouldAutoPinThread = thread => {
     if (!PIN_THREAD_PARENT_IDS.length) return false;
     return PIN_THREAD_PARENT_IDS.includes(thread.parentId);
 };
 
-const fetchStarterMessageWithRetry = async thread => {
-    let starter = await thread.fetchStarterMessage().catch(() => null);
-    if (starter) return starter;
-    await sleep(1500);
-    return thread.fetchStarterMessage().catch(() => null);
-};
+const THREAD_PIN_MESSAGE = 'Pinned for mobile users: tap to jump to the top of this thread.';
 
 const sendLogMessage = async (client, content) => {
     try {
@@ -258,13 +251,10 @@ client.on('threadCreate', async (thread, newlyCreated) => {
     if (!shouldAutoPinThread(thread)) return;
 
     try {
-        const starterMessage = await fetchStarterMessageWithRetry(thread);
-        if (!starterMessage) return;
-        if (starterMessage.pinned) return;
-
-        await starterMessage.pin('Auto-pin thread starter message');
+        const botMessage = await thread.send(THREAD_PIN_MESSAGE);
+        await botMessage.pin('Auto-pin thread header');
     } catch (error) {
-        console.error('Error auto-pinning thread starter:', error);
+        console.error('Error auto-pinning thread header:', error);
     }
 });
 
@@ -277,6 +267,16 @@ client.on('messageCreate', async message => {
 
     // Ignore messages from bots
     if (message.author.bot) return;
+
+    if (message.channel.id === hall_of_shame_channel && !message.channel.isThread() && !message.system && message.type !== MessageType.ThreadCreated) {
+        try {
+            for (const emoji of hall_of_shame_reactions) {
+                await message.react(emoji);
+            }
+        } catch (error) {
+            console.error('Error reacting in hall-of-shame:', error);
+        }
+    }
 
     const roleId = '886038506659545121';
     const channelId = '973254960479350794';

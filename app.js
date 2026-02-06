@@ -15,7 +15,7 @@ const {
     help_button_interaction
 } = require('./src/bot/commands/verify');
 const { sync_roles_command, sync_roles_interaction } = require('./src/bot/commands/sync_roles');
-const { guild_id, automod_channel, general_channel } = require('./src/bot/constants');
+const { guild_id, automod_channel, general_channel, qna_channel, log_channel } = require('./src/bot/constants');
 const { blacklist_command, blacklist_interaction } = require('./src/bot/commands/blacklist');
 const { get_uuid_command, get_uuid_interaction } = require('./src/bot/commands/get_uuid');
 const { punishments_command, punishments_interaction } = require('./src/bot/commands/punishments');
@@ -31,12 +31,13 @@ const {
     handle_guild_notify_invited
 } = require('./src/bot/commands/guild_apply');
 const { skycrypt_command, skycrypt_interaction } = require('./src/bot/commands/skycrypt');
-const { mute_command, restrict_command, ban_command, unban_command, ban_interaction, unban_interaction, punish_interaction, checkExpiredPunishments } = require('./src/bot/commands/mute_restrict_ban');
+const { mute_command, restrict_command, lfp_restrict_command, ban_command, unban_command, ban_interaction, unban_interaction, lfp_restrict_interaction, punish_interaction, checkExpiredPunishments } = require('./src/bot/commands/mute_restrict_ban');
 const { autosync_roles_all_guilds } = require('./src/bot/commands/autosync_roles');
 const { fetch_guild_data, rank_guild_command, rank_guild_interaction } = require('./src/bot/commands/rank_guild');
 const { refresh_current_snapshot_command, refresh_current_snapshot_interaction, sync_all_guilds } = require('./src/bot/commands/refresh_current_snapshot');
 const { check_garden_command, check_garden_interaction } = require('./src/bot/commands/check_garden');
 const { track_user_command, track_user_interaction, process_active_tracking_sessions, stop_all_tracking } = require('./src/bot/commands/track_user');
+const PIN_THREAD_PARENT_IDS = [qna_channel];
 // Create a new client instance
 const client = new Client({ 
     intents: [
@@ -46,6 +47,31 @@ const client = new Client({
         GatewayIntentBits.DirectMessages
     ] 
 });
+
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const shouldAutoPinThread = thread => {
+    if (!PIN_THREAD_PARENT_IDS.length) return false;
+    return PIN_THREAD_PARENT_IDS.includes(thread.parentId);
+};
+
+const fetchStarterMessageWithRetry = async thread => {
+    let starter = await thread.fetchStarterMessage().catch(() => null);
+    if (starter) return starter;
+    await sleep(1500);
+    return thread.fetchStarterMessage().catch(() => null);
+};
+
+const sendLogMessage = async (client, content) => {
+    try {
+        const channel = await client.channels.fetch(log_channel);
+        if (channel && channel.isTextBased()) {
+            await channel.send(content);
+        }
+    } catch (error) {
+        console.error('Error sending log message:', error);
+    }
+};
 
 // Database connection
 const db = mysql.createPool({
@@ -74,9 +100,12 @@ client.once('ready', async () => {
     setInterval(async () => {
         try {
             const results = await sync_all_guilds(db, client);
-            console.log('Auto sync_current_guild_members:\n' + results.join('\n'));
+            const logText = 'Auto sync_current_guild_members:\n' + results.join('\n');
+            console.log(logText);
+            await sendLogMessage(client, logText);
         } catch (err) {
             console.error('Auto sync_current_guild_members failed:', err);
+            await sendLogMessage(client, 'Auto sync_current_guild_members failed: ' + (err?.message || err));
         }
     }, 24 * 60 * 60 * 1000); // Sync guild members every day
     setInterval(async () => {
@@ -99,6 +128,7 @@ async function registerSlashCommands() {
         skycrypt_command,
         mute_command,
         restrict_command,
+        lfp_restrict_command,
         ban_command,
         unban_command,
         rank_guild_command,
@@ -159,6 +189,9 @@ client.on('interactionCreate', async interaction => {
             case 'restrict':
                 await punish_interaction(interaction, db);
                 break;
+            case 'lfp_restrict':
+                await lfp_restrict_interaction(interaction, db);
+                break;
             case 'ban':
                 await ban_interaction(interaction, db);
                 break;
@@ -217,6 +250,21 @@ client.on('interactionCreate', async interaction => {
                 await verify_interaction(interaction, db, { 'ign': interaction.fields.getTextInputValue('ign_input') });
                 break;
         }
+    }
+});
+
+client.on('threadCreate', async (thread, newlyCreated) => {
+    if (!newlyCreated) return;
+    if (!shouldAutoPinThread(thread)) return;
+
+    try {
+        const starterMessage = await fetchStarterMessageWithRetry(thread);
+        if (!starterMessage) return;
+        if (starterMessage.pinned) return;
+
+        await starterMessage.pin('Auto-pin thread starter message');
+    } catch (error) {
+        console.error('Error auto-pinning thread starter:', error);
     }
 });
 

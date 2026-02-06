@@ -42,15 +42,17 @@ const xp_restricted_role = '1281754617428049951';
 const automod_channel = '1346625724865318912';
 const general_channel = '1346623017878552726';
 const punishment_log_channel = '1346625649590403162';
+const lfp_punishment_log_channel = '1433075278065963080';
 const alerts_channel = '1346624501106081873';
 const tracking_channel = '1381410909938913310';
 const log_channel = '1388919866731266169';
+const qna_channel = '1346682473870000208';
 
 const ims_members_channel = '1348459267442606081';
 const imc_members_channel = '1348459500281270303';
 const ima_members_channel = '1348459567335473203';
 
-const IMA_req = 200;
+const IMA_req = 240;
 const IMC_req = 360;
 const IMS_req = 440;
 
@@ -107,9 +109,11 @@ module.exports = {
     lfp_plus_restricted_role,
     bridge_restricted_role,
     xp_restricted_role,
+    qna_channel,
     automod_channel, 
     general_channel, 
     punishment_log_channel,
+    lfp_punishment_log_channel,
     alerts_channel,
     tracking_channel,
     log_channel,

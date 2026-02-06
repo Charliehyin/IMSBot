@@ -46,6 +46,7 @@ const lfp_punishment_log_channel = '1433075278065963080';
 const alerts_channel = '1346624501106081873';
 const tracking_channel = '1381410909938913310';
 const log_channel = '1388919866731266169';
+const qna_channel = '1346682473870000208';
 
 const ims_members_channel = '1348459267442606081';
 const imc_members_channel = '1348459500281270303';
@@ -108,6 +109,7 @@ module.exports = {
     lfp_plus_restricted_role,
     bridge_restricted_role,
     xp_restricted_role,
+    qna_channel,
     automod_channel, 
     general_channel, 
     punishment_log_channel,

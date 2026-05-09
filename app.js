@@ -146,103 +146,123 @@ async function registerSlashCommands() {
     }
 }
 
-client.on('interactionCreate', async interaction => {
-    if (interaction.isChatInputCommand()) {
-        switch (interaction.commandName) {
-            case 'verify':
-                await verify_interaction(interaction, db);
-                break;
-            case 'sync-roles':
-                await sync_roles_interaction(interaction, db);
-                break;
-            case 'blacklist':
-                await blacklist_interaction(interaction, db);
-                break;
-            case 'get_uuid':
-                await get_uuid_interaction(interaction, db);
-                break;
-            case 'punishments':
-                await punishments_interaction(interaction, db, null);
-                break;
-            case 'setup_apply':
-                await setup_apply_interaction(interaction);
-                break;
-            case 'setup_verify':
-                await setup_verify_interaction(interaction);
-                break;
-            case 'help_verify':
-                await help_verify_interaction(interaction);
-                break;
-            case 'skycrypt':
-                await skycrypt_interaction(interaction, db);
-                break;
-            case 'mute':
-                await punish_interaction(interaction, db, 'mute');
-                break;
-            case 'restrict':
-                await punish_interaction(interaction, db);
-                break;
-            case 'lfp_restrict':
-                await lfp_restrict_interaction(interaction, db);
-                break;
-            case 'ban':
-                await ban_interaction(interaction, db);
-                break;
-            case 'unban':
-                await unban_interaction(interaction, db);
-                break;
-            case 'rank_guild':
-                await rank_guild_interaction(interaction, db);
-                break;
-            case 'check_garden':
-                await check_garden_interaction(interaction, db);
-                break;
-            case 'track_user':
-                await track_user_interaction(interaction, db, client);
-                break;
-            case 'sync_current_guild_members':
-                await refresh_current_snapshot_interaction(interaction, db, client);
-                break;
-        }
-    } 
-    else if (interaction.isButton()) {
-        if (interaction.customId.startsWith('apply_')) {
-            await handle_guild_selection(interaction, db, client);
+const replyToFailedInteraction = async (interaction) => {
+    if (!interaction.isRepliable()) return;
+
+    try {
+        const message = 'There was an error while processing this interaction.';
+        if (interaction.deferred || interaction.replied) {
+            await interaction.followUp({ content: message, ephemeral: true });
         } else {
-            switch (interaction.customId) {
-                case 'guild_accept':
-                    await handle_guild_accept(interaction, db, client);
+            await interaction.reply({ content: message, ephemeral: true });
+        }
+    } catch (replyError) {
+        console.error('Error replying to failed interaction:', replyError);
+    }
+};
+
+client.on('interactionCreate', async interaction => {
+    try {
+        if (interaction.isChatInputCommand()) {
+            switch (interaction.commandName) {
+                case 'verify':
+                    await verify_interaction(interaction, db);
                     break;
-                case 'guild_reject':
-                    await handle_guild_reject(interaction, db, client);
+                case 'sync-roles':
+                    await sync_roles_interaction(interaction, db);
                     break;
-                case 'application_close':
-                    await handle_application_close(interaction, db, client);
+                case 'blacklist':
+                    await blacklist_interaction(interaction, db);
                     break;
-                case 'guild_invited':
-                    await handle_guild_invited(interaction, db, client);
+                case 'get_uuid':
+                    await get_uuid_interaction(interaction, db);
                     break;
-                case 'guild_ask_to_leave':
-                    await handle_guild_ask_to_leave(interaction, db, client);
+                case 'punishments':
+                    await punishments_interaction(interaction, db, null);
                     break;
-                case 'guild_notify_invited':
-                    await handle_guild_notify_invited(interaction, db, client);
+                case 'setup_apply':
+                    await setup_apply_interaction(interaction);
                     break;
-                case 'verify_button':
-                    await verify_button_interaction(interaction, db);
+                case 'setup_verify':
+                    await setup_verify_interaction(interaction);
                     break;
-                case 'verify_help':
-                    await help_button_interaction(interaction);
+                case 'help_verify':
+                    await help_verify_interaction(interaction);
+                    break;
+                case 'skycrypt':
+                    await skycrypt_interaction(interaction, db);
+                    break;
+                case 'mute':
+                    await punish_interaction(interaction, db, 'mute');
+                    break;
+                case 'restrict':
+                    await punish_interaction(interaction, db);
+                    break;
+                case 'lfp_restrict':
+                    await lfp_restrict_interaction(interaction, db);
+                    break;
+                case 'ban':
+                    await ban_interaction(interaction, db);
+                    break;
+                case 'unban':
+                    await unban_interaction(interaction, db);
+                    break;
+                case 'rank_guild':
+                    await rank_guild_interaction(interaction, db);
+                    break;
+                case 'check_garden':
+                    await check_garden_interaction(interaction, db);
+                    break;
+                case 'track_user':
+                    await track_user_interaction(interaction, db, client);
+                    break;
+                case 'sync_current_guild_members':
+                    await refresh_current_snapshot_interaction(interaction, db, client);
                     break;
             }
         }
-    } 
-    else if (interaction.isModalSubmit()) {
-        switch(interaction.customId) {
-            case 'verification_form':
-                await verify_interaction(interaction, db, { 'ign': interaction.fields.getTextInputValue('ign_input') });
-                break;
+        else if (interaction.isButton()) {
+            if (interaction.customId.startsWith('apply_')) {
+                await handle_guild_selection(interaction, db, client);
+            } else {
+                switch (interaction.customId) {
+                    case 'guild_accept':
+                        await handle_guild_accept(interaction, db, client);
+                        break;
+                    case 'guild_reject':
+                        await handle_guild_reject(interaction, db, client);
+                        break;
+                    case 'application_close':
+                        await handle_application_close(interaction, db, client);
+                        break;
+                    case 'guild_invited':
+                        await handle_guild_invited(interaction, db, client);
+                        break;
+                    case 'guild_ask_to_leave':
+                        await handle_guild_ask_to_leave(interaction, db, client);
+                        break;
+                    case 'guild_notify_invited':
+                        await handle_guild_notify_invited(interaction, db, client);
+                        break;
+                    case 'verify_button':
+                        await verify_button_interaction(interaction, db);
+                        break;
+                    case 'verify_help':
+                        await help_button_interaction(interaction);
+                        break;
+                }
+            }
         }
+        else if (interaction.isModalSubmit()) {
+            switch(interaction.customId) {
+                case 'verification_form':
+                    await verify_interaction(interaction, db, { 'ign': interaction.fields.getTextInputValue('ign_input') });
+                    break;
+            }
+        }
+    } catch (error) {
+        console.error('Error handling interaction:', error);
+        await replyToFailedInteraction(interaction);
     }
 });
 
@@ -263,8 +283,6 @@ client.on('messageCreate', async message => {
     // Ignore messages not in IMS
     // if (message.guild.id !== guild_id) return;
     
-    const channel = await client.channels.fetch(automod_channel);
-
     // Ignore messages from bots
     if (message.author.bot) return;
 
@@ -311,6 +329,7 @@ client.on('messageCreate', async message => {
 
     // Automod messages using OpenAI Moderation API
     try {
+        const channel = await client.channels.fetch(automod_channel);
         await process_moderationapi_message(message, "https://api.openai.com/v1/moderations", channel, client);
         botStatus.apiWorking = true;
     } catch (error) {

@@ -212,9 +212,13 @@ const punishments_interaction = async (interaction, db, subcommand) => {
                 });
             });
         
-            collector.on('end', () => {
+            collector.on('end', async () => {
                 row.components.forEach(button => button.setDisabled(true));
-                interaction.editReply({ components: [row] });
+                try {
+                    await interaction.editReply({ components: [row] });
+                } catch (error) {
+                    console.error('Error disabling punishments pagination buttons:', error);
+                }
             });
             
         }

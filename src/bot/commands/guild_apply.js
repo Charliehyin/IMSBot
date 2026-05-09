@@ -121,14 +121,14 @@ const setup_apply_interaction = async (interaction) => {
         await interaction.reply({ content: 'Application button has been set up!', ephemeral: true });
     } catch (error) {
         console.error('Error setting up apply button:', error);
-        interaction.reply({ content: `An error occurred while setting up the apply button: ${error.message}`, ephemeral: true });
+        await interaction.reply({ content: `An error occurred while setting up the apply button: ${error.message}`, ephemeral: true });
     }
 }
 
 const create_application = async (interaction, db, client, member, ign, application_channel, staff_role, application_category, guildName) => {
     try {
         const channel = await client.channels.fetch(application_channel);
-        const applyMessage = await channel.send(`<@&${staff_role}>\n[${ign}](https://sky.shiiyu.moe/stats/${ign}) (${member}) has applied for ${guildName}!`);
+        const applyMessage = await channel.send(`<@&${staff_role}>\n[${ign}](https://sky.shiiiyu.moe/stats/${ign}) (${member}) has applied for ${guildName}!`);
 
         // Create a new channel in application_category
         const application = await interaction.guild.channels.create({
@@ -360,7 +360,7 @@ You can also type /guild accept ${gmIgn} to join.\n`
                 waitlist_channel = await client.channels.fetch(IMS_waitlist);
                 waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>) <#${application_channel}>`);
 
-                channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
+                await channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
                 accepted_message += `<#${IMS_waitlist}>`;
                 break;
             case 'Ironman Casuals':
@@ -368,7 +368,7 @@ You can also type /guild accept ${gmIgn} to join.\n`
                 waitlist_channel = await client.channels.fetch(IMC_waitlist);
                 waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>) <#${application_channel}>`);
 
-                channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
+                await channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
                 accepted_message += `<#${IMC_waitlist}>`;
                 break;
             case 'Ironman Academy':
@@ -376,7 +376,7 @@ You can also type /guild accept ${gmIgn} to join.\n`
                 waitlist_channel = await client.channels.fetch(IMA_waitlist);
                 waitlist_message = await waitlist_channel.send(`${ign} (<@${userid}>) <#${application_channel}>`);
 
-                channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
+                await channel.send(`${ign} (<@${userid}>) has been accepted by ${interaction.user}!`);
                 accepted_message += `<#${IMA_waitlist}>`;
                 break;
         }
@@ -410,15 +410,15 @@ You can also type /guild accept ${gmIgn} to join.\n`
 
         // dm the user and send a message in the application channel
         application_channel = await client.channels.fetch(application_channel);
-        dm.send(accepted_message);
-        application_channel.send(accepted_message);
+        await dm.send(accepted_message);
+        await application_channel.send(accepted_message);
 
         // delete the message
         await interaction.message.delete();
         console.log("accept");
     } catch (error) {
         console.error('Error accepting user:', error);
-        interaction.reply({ content: `An error occurred while accepting the user: ${error.message}`, ephemeral: true });
+        await interaction.reply({ content: `An error occurred while accepting the user: ${error.message}`, ephemeral: true });
     }
 }
 
@@ -442,15 +442,15 @@ const handle_guild_reject = async (interaction, db, client) => {
         switch(guildName) {
             case 'Ironman Sweats':
                 channel = await client.channels.fetch(IMS_application_channel);
-                channel.send(`${ign} (<@${userid}>) has been rejected by ${interaction.user}!`);
+                await channel.send(`${ign} (<@${userid}>) has been rejected by ${interaction.user}!`);
                 break;
             case 'Ironman Casuals':
                 channel = await client.channels.fetch(IMC_application_channel);
-                channel.send(`${ign} (<@${userid}>) has been rejected by ${interaction.user}!`);
+                await channel.send(`${ign} (<@${userid}>) has been rejected by ${interaction.user}!`);
                 break;
             case 'Ironman Academy':
                 channel = await client.channels.fetch(IMA_application_channel);
-                channel.send(`${ign} (<@${userid}>) has been rejected by ${interaction.user}!`);
+                await channel.send(`${ign} (<@${userid}>) has been rejected by ${interaction.user}!`);
                 break;
         }
 
@@ -467,9 +467,9 @@ const handle_guild_reject = async (interaction, db, client) => {
 
         // dm the user and send a message in the application channel
         const dm = await member.createDM();
-        dm.send(rejection_message);
+        await dm.send(rejection_message);
         application_channel = await client.channels.fetch(application_channel);
-        application_channel.send(rejection_message);
+        await application_channel.send(rejection_message);
 
         // Create a close channel button
         const CloseButton = new ActionRowBuilder()
@@ -486,7 +486,7 @@ const handle_guild_reject = async (interaction, db, client) => {
     }
     catch (error) {
         console.error('Error rejecting user:', error);
-        interaction.reply({ content: `An error occurred while rejecting the user: ${error.message}`, ephemeral: true });
+        await interaction.reply({ content: `An error occurred while rejecting the user: ${error.message}`, ephemeral: true });
     }
 }
 
@@ -499,7 +499,7 @@ const handle_application_close = async (interaction, db, client) => {
         await application_channel.delete();
     } catch (error) {
         console.error('Error closing application channel:', error);
-        interaction.reply({ content: `An error occurred while closing the application channel: ${error.message}`, ephemeral: true });
+        await interaction.reply({ content: `An error occurred while closing the application channel: ${error.message}`, ephemeral: true });
     }
 }
 
@@ -534,7 +534,7 @@ const handle_guild_invited = async (interaction, db, client) => {
         await interaction.message.delete();
     } catch (error) {
         console.error('Error inviting user:', error);
-        interaction.reply({ content: `An error occurred while inviting the user: ${error.message}`, ephemeral: true });
+        await interaction.reply({ content: `An error occurred while inviting the user: ${error.message}`, ephemeral: true });
     }
 }
 
@@ -559,15 +559,15 @@ const handle_guild_ask_to_leave = async (interaction, db, client) => {
         let ask_to_leave_message = `It is your turn to be invited to ${guildName}. Please leave your guild so you can get invited. <@${userid}>`;
 
         const dm = await member.createDM();
-        dm.send(ask_to_leave_message);
+        await dm.send(ask_to_leave_message);
 
-        application_channel.send(ask_to_leave_message);
+        await application_channel.send(ask_to_leave_message);
 
-        interaction.reply({ content: `${ign} has been asked to leave their guild`, ephemeral: true });
+        await interaction.reply({ content: `${ign} has been asked to leave their guild`, ephemeral: true });
         console.log(`    ${ign} has been asked to leave their guild`)
     } catch (error) {
         console.error('Error asking user to leave:', error);
-        interaction.reply({ content: `An error occurred while asking the user to leave: ${error.message}`, ephemeral: true });
+        await interaction.reply({ content: `An error occurred while asking the user to leave: ${error.message}`, ephemeral: true });
     }
 }
 
@@ -604,15 +604,15 @@ If you missed the invite, don't worry, you will receive another one.
 You can also type /guild accept ${gmIgn} to join. <@${userid}>`;
 
         const dm = await member.createDM();
-        dm.send(notify_invited_message);
+        await dm.send(notify_invited_message);
 
-        application_channel.send(notify_invited_message);
+        await application_channel.send(notify_invited_message);
 
-        interaction.reply({ content: `${ign} has been notified of their invite`, ephemeral: true });
+        await interaction.reply({ content: `${ign} has been notified of their invite`, ephemeral: true });
         console.log(`    ${ign} has been invited to ${guildName}`);
     } catch (error) {
         console.error('Error notifying user to leave:', error);
-        interaction.reply({ content: `An error occurred while notifying the user to leave: ${error.message}`, ephemeral: true });
+        await interaction.reply({ content: `An error occurred while notifying the user to leave: ${error.message}`, ephemeral: true });
     }
 }
 

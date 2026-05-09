@@ -16,7 +16,7 @@ const skycrypt_interaction = async (interaction, db) => {
 
         console.log(`    IGN: ${ign}`)
 
-        const skycrypt = `https://sky.shiiyu.moe/stats/${ign}`;
+        const skycrypt = `https://sky.shiiiyu.moe/stats/${ign}`;
 
         await interaction.reply(`The skycrypt of \`${ign}\` is: \n${skycrypt}`);
     } catch (error) {

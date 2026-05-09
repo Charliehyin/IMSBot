@@ -258,11 +258,11 @@ const verify_interaction = async (interaction, db, opts) => {
         ephemeral = false;
     }
     const discord_id = interaction.user.id;
-    interaction.deferReply({ ephemeral: ephemeral });
+    await interaction.deferReply({ ephemeral: ephemeral });
 
     console.log(`Verifying ${discord_username} with IGN ${ign}`)
     try {
-        verified = await verifyMember(interaction, discord_username, ign, discord_id, db);
+        const verified = await verifyMember(interaction, discord_username, ign, discord_id, db);
 
         if (verified.startsWith("success")) {
             // Add verified role to user

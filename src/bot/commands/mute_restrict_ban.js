@@ -126,7 +126,7 @@ const unban_command = new SlashCommandBuilder()
             .setRequired(true));
 
 const ban_interaction = async (interaction, db) => {
-    interaction.deferReply();
+    await interaction.deferReply();
     const user = interaction.options.getUser('user');
     let reason = interaction.options.getString('reason');
 
@@ -219,12 +219,12 @@ const ban_interaction = async (interaction, db) => {
         await interaction.editReply(reply_string);
     } catch (error) {
         console.error('Error banning user:', error);
-        interaction.editReply(`An error occurred while trying to ban the user: ${error}`);
+        await interaction.editReply(`An error occurred while trying to ban the user: ${error}`);
     }
 }
 
 const unban_interaction = async (interaction, db) => {
-    interaction.deferReply();
+    await interaction.deferReply();
     console.log('Unbanning user');
     try {
         const user_id = interaction.options.getString('user_id');
@@ -242,12 +242,12 @@ const unban_interaction = async (interaction, db) => {
         await log_action(interaction.client, `Unban`, interaction.user, `${user_id}`, `${user_id} was unbanned.`);
     } catch (error) {
         console.error('Error unbanning user:', error);
-        interaction.editReply(`An error occurred while trying to unban the user: ${error}`);
+        await interaction.editReply(`An error occurred while trying to unban the user: ${error}`);
     }
 }
 
 const lfp_restrict_interaction = async (interaction, db) => {
-    interaction.deferReply();
+    await interaction.deferReply();
     const user = interaction.options.getUser('user');
     const type = interaction.options.getString('type');
     const durationInput = interaction.options.getString('duration');
@@ -448,12 +448,12 @@ const lfp_restrict_interaction = async (interaction, db) => {
 
     } catch (error) {
         console.error('Error applying LFP restriction:', error);
-        interaction.editReply(`An error occurred while trying to punish the user: ${error}`);
+        await interaction.editReply(`An error occurred while trying to punish the user: ${error}`);
     }
 };
 
 const punish_interaction = async (interaction, db, punishment_type) => {
-    interaction.deferReply();
+    await interaction.deferReply();
     const user = interaction.options.getUser('user');
     const duration = interaction.options.getString('duration');
     const reason = interaction.options.getString('reason');
@@ -667,7 +667,7 @@ const punish_interaction = async (interaction, db, punishment_type) => {
 
     } catch (error) {
         console.error('Error muting user:', error);
-        interaction.editReply(`An error occurred while trying to punish the user: ${error}`);
+        await interaction.editReply(`An error occurred while trying to punish the user: ${error}`);
     }
 };
 

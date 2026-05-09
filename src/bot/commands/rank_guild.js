@@ -161,9 +161,13 @@ const create_embed = async (interaction, title, description, rows) => {
         });
     });
 
-    collector.on('end', () => {
+    collector.on('end', async () => {
         row.components.forEach(button => button.setDisabled(true));
-        interaction.editReply({ components: [row] });
+        try {
+            await interaction.editReply({ components: [row] });
+        } catch (error) {
+            console.error('Error disabling rank guild pagination buttons:', error);
+        }
     });
 }
 

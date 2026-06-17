@@ -192,9 +192,13 @@ const blacklist_interaction = async (interaction, db) => {
                 });
             });
         
-            collector.on('end', () => {
+            collector.on('end', async () => {
                 row.components.forEach(button => button.setDisabled(true));
-                interaction.editReply({ components: [row] });
+                try {
+                    await interaction.editReply({ components: [row] });
+                } catch (error) {
+                    console.error('Error disabling blacklist pagination buttons:', error);
+                }
             });
         }
         else if (subcommand === 'view') {
@@ -266,9 +270,13 @@ const blacklist_interaction = async (interaction, db) => {
                 });
             });
         
-            collector.on('end', () => {
+            collector.on('end', async () => {
                 row.components.forEach(button => button.setDisabled(true));
-                interaction.editReply({ components: [row] });
+                try {
+                    await interaction.editReply({ components: [row] });
+                } catch (error) {
+                    console.error('Error disabling blacklist pagination buttons:', error);
+                }
             });
         }
     } catch (error) {

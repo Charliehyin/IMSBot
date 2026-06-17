@@ -64,7 +64,7 @@ const sync_roles_command = new SlashCommandBuilder()
 const sync_roles_interaction = async (interaction, db) => {
     console.log('Syncing roles')
     if (interaction.isCommand()) {
-        interaction.deferReply();
+        await interaction.deferReply();
     }
     // Sync guild info
     try {
@@ -75,7 +75,11 @@ const sync_roles_interaction = async (interaction, db) => {
         let sql = `SELECT uuid, ign FROM members WHERE discord_id = ?`;
         let [rows] = await db.query(sql, [discord_id]);
         if (rows.length === 0) {
-            await interaction.reply('You are not verified');
+            if (interaction.isCommand()) {
+                await interaction.editReply('You are not verified');
+            } else {
+                await interaction.reply('You are not verified');
+            }
             return;
         }
         const uuid = rows[0].uuid;

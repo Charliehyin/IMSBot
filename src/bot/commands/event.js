@@ -313,8 +313,9 @@ const create_event_participant = async (db, participant) => {
             signup_umber_corpse_count,
             signup_glacite_powder_available,
             signup_glacite_powder_spent,
-            signup_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            signup_at,
+            profile_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
             participant.eventId,
             participant.discordUserId,
@@ -329,6 +330,7 @@ const create_event_participant = async (db, participant) => {
             participant.signupGlacitePowderAvailable ?? null,
             participant.signupGlacitePowderSpent ?? null,
             participant.signupAt,
+            participant.profileId ?? null,
         ]
     );
 
@@ -573,7 +575,7 @@ const claim_snapshot_tasks = async (db, snapshotRunId, batchSize, now, claimToke
 
         const [claimedRows] = await connection.query(
             `SELECT task.*, participant.event_id, participant.discord_user_id, participant.minecraft_uuid,
-                    participant.minecraft_username, participant.signup_corpse_count
+                    participant.minecraft_username, participant.signup_corpse_count, participant.profile_id
              FROM event_snapshot_tasks task
              JOIN event_participants participant ON participant.id = task.participant_id
              WHERE task.claim_token = ?
@@ -808,7 +810,7 @@ const process_snapshot_run_batch = async (db, client, snapshotRun, fetchCorpseCo
     }
 
     for (const task of claimedTasks) {
-        const lookupResult = await fetchCorpseCount(task.minecraft_uuid);
+        const lookupResult = await fetchCorpseCount(task.minecraft_uuid, { profileId: task.profile_id ?? null });
         const nextAttempt = Number(task.attempt_count || 0) + 1;
 
         if (lookupResult.ok) {
@@ -1218,6 +1220,7 @@ const signup_for_current_event = async (db, discordUserId, fetchCorpseCount = ge
             discordUserId,
             minecraftUuid: linkedAccount.uuid,
             minecraftUsername: linkedAccount.ign,
+            profileId: vanguardResult.profileId,
             signupCorpseCount: vanguardResult.count,
             signupOverallCorpseCount: vanguardResult.overallCorpseCount,
             signupGlacitePowder: vanguardResult.glacitePowder,

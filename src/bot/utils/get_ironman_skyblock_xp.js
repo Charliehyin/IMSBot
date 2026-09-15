@@ -150,14 +150,6 @@ const select_vanguard_ironman_profile = (profiles, uuid) => {
         return null;
     }
 
-    const selectedIronmanProfile = ironmanProfiles.find(profile => profile.selected === true);
-    if (selectedIronmanProfile) {
-        return {
-            profile: selectedIronmanProfile,
-            selectionReason: 'selected_ironman_profile',
-        };
-    }
-
     const sortedProfiles = [...ironmanProfiles].sort((left, right) => {
         const rightXp = get_profile_leveling_experience(right, normalizedUuid);
         const leftXp = get_profile_leveling_experience(left, normalizedUuid);
@@ -167,7 +159,7 @@ const select_vanguard_ironman_profile = (profiles, uuid) => {
 
         const rightLastSave = get_profile_last_save(right, normalizedUuid);
         const leftLastSave = get_profile_last_save(left, normalizedUuid);
-        return rightLastSave - leftLastSave;
+        return rightLastSave - leftLastSave || String(left.profile_id).localeCompare(String(right.profile_id));
     });
 
     return {
@@ -264,7 +256,21 @@ const get_event_counts = async (uuid, options = {}) => {
     }
 
     const profiles = Array.isArray(profileResponse.data.profiles) ? profileResponse.data.profiles : [];
-    const selectedProfileResult = select_vanguard_ironman_profile(profiles, normalizedUuid);
+    const savedProfile = options.profileId
+        ? profiles.find(profile => profile?.profile_id === options.profileId
+            && profile?.game_mode === 'ironman' && profile?.members?.[normalizedUuid])
+        : null;
+    if (options.profileId && !savedProfile) {
+        return {
+            ok: false,
+            failureCode: 'MISSING_SAVED_IRONMAN_PROFILE',
+            message: 'The saved event Ironman profile is unavailable for this player.',
+            retryable: false,
+        };
+    }
+    const selectedProfileResult = savedProfile
+        ? { profile: savedProfile, selectionReason: 'saved_event_profile' }
+        : select_vanguard_ironman_profile(profiles, normalizedUuid);
     if (!selectedProfileResult) {
         return {
             ok: false,

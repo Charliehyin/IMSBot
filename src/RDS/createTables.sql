@@ -155,6 +155,7 @@ CREATE TABLE event_participants (
     discord_user_id VARCHAR(32) NOT NULL,
     minecraft_uuid VARCHAR(32) NOT NULL,
     minecraft_username VARCHAR(32) NOT NULL,
+    profile_id VARCHAR(36) DEFAULT NULL,
     signup_corpse_count INT DEFAULT NULL,
     signup_overall_corpse_count BIGINT DEFAULT NULL,
     signup_glacite_powder BIGINT DEFAULT NULL,
